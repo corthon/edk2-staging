@@ -92,6 +92,20 @@ struct LibState {
 
 static mut INITIALIZED_STATE: Option<LibState> = None;
 
+// Quick helper to assist with CHAR16 -> String.
+// TODO: Put this in a single impl.
+unsafe fn char16_to_string (string_in: *const efi::Char16) -> String {
+  let string_in_u16 = string_in as *const u16;
+
+  // Count the chars in the string.
+  let mut string_len: isize = 0;
+  while *(string_in_u16.offset(string_len)) != 0 {
+    string_len += 1;
+  }
+
+  String::from_utf16_lossy(slice::from_raw_parts(string_in_u16, string_len as usize))
+}
+
 #[no_mangle]
 #[export_name = "RegisterVariablePolicy"]
 pub extern "win64" fn register_variable_policy(policy_data: *const RawVariablePolicyEntry) -> efi::Status {
@@ -131,10 +145,17 @@ pub extern "win64" fn validate_set_variable (
     Some(lib_state) => {
       if lib_state.protection_disabled { return efi::Status::SUCCESS; }
 
-      // TODO: Turn EFI params into Rust params.
-      // TODO: Call policy_list.is_set_variable_valid().
+      // Turn EFI params into Rust params.
+      let my_vendor_guid: efi::Guid = unsafe { *vendor_guid };
+      let my_data: &[u8] = unsafe { slice::from_raw_parts(data, data_size) };
+      let my_variable_name = unsafe { char16_to_string(variable_name) };
 
-      efi::Status::SUCCESS
+      // Call policy_list.is_set_variable_valid().
+      let is_valid = lib_state.policy_list.is_set_variable_valid(&my_variable_name, &my_vendor_guid, attributes, my_data);
+      match is_valid {
+        true => efi::Status::SUCCESS,
+        false => efi::Status::WRITE_PROTECTED
+      }
     },
     None => efi::Status::NOT_READY
   }
