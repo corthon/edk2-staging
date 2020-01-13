@@ -2,14 +2,9 @@
 
 #![allow(unused)]
 
-#![no_std]
+#![cfg_attr(not(test), no_std)]
 
 #![feature(alloc_error_handler)]
-
-// When building for production, don't use StdLib.
-#[cfg(test)]
-#[macro_use]
-extern crate std;
 
 // When building for production, will get this from the RustPkg.
 #[cfg(test)]
@@ -39,12 +34,14 @@ extern "C" {
   fn FreePool (Buffer: *mut c_void);
 }
 
+#[cfg(not(test))]
 #[panic_handler]
 #[allow(clippy::empty_loop)]
 fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
+#[cfg(not(test))]
 #[alloc_error_handler]
 fn alloc_error_handler(layout: core::alloc::Layout) -> !
 {
@@ -52,6 +49,7 @@ fn alloc_error_handler(layout: core::alloc::Layout) -> !
 }
 
 pub struct MyAllocator;
+#[cfg(not(test))]
 unsafe impl GlobalAlloc for MyAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
       let size = layout.size();
@@ -67,6 +65,7 @@ unsafe impl GlobalAlloc for MyAllocator {
     }
 }
 
+#[cfg(not(test))]
 #[global_allocator]
 static ALLOCATOR: MyAllocator = MyAllocator;
 //=====================================================================================================================
@@ -83,6 +82,15 @@ type EfiGetVariable = extern "win64" fn(_: *const efi::Char16,
                                         _: *mut u32,
                                         _: *mut usize,
                                         _: *mut u8) -> efi::Status;
+
+struct LibState {
+  policy_list: VariablePolicyList,
+  get_variable_helper: EfiGetVariable,
+  interface_locked: bool,
+  protection_disabled: bool,
+}
+
+static mut INITIALIZED_STATE: Option<LibState> = None;
 
 #[no_mangle]
 #[export_name = "RegisterVariablePolicy"]
@@ -160,7 +168,11 @@ pub extern "win64" fn is_variable_policy_lib_initialized (
 #[export_name = "DeinitVariablePolicyLib"]
 pub extern "win64" fn deinit_variable_policy_lib (
     ) -> efi::Status {
-    efi::Status::SUCCESS
+  let state = unsafe { &INITIALIZED_STATE };
+  match state {
+    Some(_) => efi::Status::SUCCESS,
+    None => efi::Status::NOT_READY
+  }
 }
 //=====================================================================================================================
 
