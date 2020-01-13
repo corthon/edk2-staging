@@ -1332,10 +1332,12 @@ LockOnCreatePoliciesShouldBeHonored (
   UT_ASSERT_NOT_EFI_ERROR( RegisterVariablePolicy( &ValidationPolicy.Header ) );
 
   // Set consistent expectations on what the calls are looking for.
-  expect_memory_count( StubGetVariableNull, VariableName, TEST_VAR_1_NAME, sizeof(TEST_VAR_1_NAME), 2 );
-  expect_memory_count( StubGetVariableNull, VendorGuid, &mTestGuid1, sizeof(mTestGuid1), 2 );
+  expect_memory_count( StubGetVariableNull, VariableName, TEST_VAR_1_NAME, sizeof(TEST_VAR_1_NAME), 3 );
+  expect_memory_count( StubGetVariableNull, VendorGuid, &mTestGuid1, sizeof(mTestGuid1), 3 );
   ExpectedDataSize = 0;
   expect_memory_count( StubGetVariableNull, DataSize, &ExpectedDataSize, sizeof(ExpectedDataSize), 2 );
+  ExpectedDataSize = 10;
+  expect_memory_count( StubGetVariableNull, DataSize, &ExpectedDataSize, sizeof(ExpectedDataSize), 1 );
 
   // With a policy, make sure that writes still work, since the variable doesn't exist.
   will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
@@ -1354,6 +1356,11 @@ LockOnCreatePoliciesShouldBeHonored (
   will_return( StubGetVariableNull, 10 );                             // Size
   will_return( StubGetVariableNull, NULL );                           // DataPtr
   will_return( StubGetVariableNull, EFI_BUFFER_TOO_SMALL );           // Status
+
+  will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
+  will_return( StubGetVariableNull, 10 );                             // Size
+  will_return( StubGetVariableNull, DummyData );                      // DataPtr
+  will_return( StubGetVariableNull, EFI_SUCCESS );                    // Status
   PolicyCheck = ValidateSetVariable( TEST_VAR_1_NAME,
                                     &mTestGuid1,
                                     VARIABLE_ATTRIBUTE_BS_RT_AT,
@@ -1394,7 +1401,6 @@ LockOnStatePoliciesShouldBeHonored (
   EFI_STATUS  PolicyCheck;
   UINT8       DummyData[12];
   UINT8       ValidationStateVar;
-  UINTN       ExpectedDataSize;
   UT_ASSERT_TRUE( InitExpVarPolicyStrings( &ValidationPolicy, TEST_VAR_1_NAME, TEST_VAR_2_NAME ) );
 
 
@@ -1410,10 +1416,9 @@ LockOnStatePoliciesShouldBeHonored (
   UT_ASSERT_NOT_EFI_ERROR( RegisterVariablePolicy( &ValidationPolicy.Header ) );
 
   // Set consistent expectations on what the calls are looking for.
-  expect_memory_count( StubGetVariableNull, VariableName, TEST_VAR_2_NAME, sizeof(TEST_VAR_2_NAME), 5 );
-  expect_memory_count( StubGetVariableNull, VendorGuid, &mTestGuid2, sizeof(mTestGuid2), 5 );
-  ExpectedDataSize = 1;
-  expect_memory_count( StubGetVariableNull, DataSize, &ExpectedDataSize, sizeof(ExpectedDataSize), 5 );
+  expect_memory_count( StubGetVariableNull, VariableName, TEST_VAR_2_NAME, sizeof(TEST_VAR_2_NAME), 9 );
+  expect_memory_count( StubGetVariableNull, VendorGuid, &mTestGuid2, sizeof(mTestGuid2), 9 );
+  expect_any_always( StubGetVariableNull, DataSize );
 
   // With a policy, make sure that writes still work, since the variable doesn't exist.
   will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
@@ -1432,6 +1437,11 @@ LockOnStatePoliciesShouldBeHonored (
   will_return( StubGetVariableNull, 10 );                             // Size
   will_return( StubGetVariableNull, NULL );                           // DataPtr
   will_return( StubGetVariableNull, EFI_BUFFER_TOO_SMALL );           // Status
+
+  will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
+  will_return( StubGetVariableNull, 10 );                             // Size
+  will_return( StubGetVariableNull, DummyData );                      // DataPtr
+  will_return( StubGetVariableNull, EFI_SUCCESS );                    // Status
   PolicyCheck = ValidateSetVariable( TEST_VAR_1_NAME,
                                     &mTestGuid1,
                                     VARIABLE_ATTRIBUTE_BS_RT_AT,
@@ -1443,8 +1453,14 @@ LockOnStatePoliciesShouldBeHonored (
   ValidationStateVar = 0;
   will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
   will_return( StubGetVariableNull, sizeof(ValidationStateVar) );     // Size
+  will_return( StubGetVariableNull, NULL );                           // DataPtr
+  will_return( StubGetVariableNull, EFI_BUFFER_TOO_SMALL );           // Status
+
+  will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
+  will_return( StubGetVariableNull, sizeof(ValidationStateVar) );     // Size
   will_return( StubGetVariableNull, &ValidationStateVar );            // DataPtr
   will_return( StubGetVariableNull, EFI_SUCCESS );                    // Status
+
   PolicyCheck = ValidateSetVariable( TEST_VAR_1_NAME,
                                     &mTestGuid1,
                                     VARIABLE_ATTRIBUTE_BS_RT_AT,
@@ -1454,6 +1470,11 @@ LockOnStatePoliciesShouldBeHonored (
 
   // With a policy, check a state variable with another wrong value.
   ValidationStateVar = 10;
+  will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
+  will_return( StubGetVariableNull, sizeof(ValidationStateVar) );     // Size
+  will_return( StubGetVariableNull, NULL );                           // DataPtr
+  will_return( StubGetVariableNull, EFI_BUFFER_TOO_SMALL );           // Status
+
   will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
   will_return( StubGetVariableNull, sizeof(ValidationStateVar) );     // Size
   will_return( StubGetVariableNull, &ValidationStateVar );            // DataPtr
@@ -1467,6 +1488,11 @@ LockOnStatePoliciesShouldBeHonored (
 
   // With a policy, make sure that a call with a correct state variable fails.
   ValidationStateVar = 20;
+  will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
+  will_return( StubGetVariableNull, sizeof(ValidationStateVar) );     // Size
+  will_return( StubGetVariableNull, NULL );                           // DataPtr
+  will_return( StubGetVariableNull, EFI_BUFFER_TOO_SMALL );           // Status
+
   will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
   will_return( StubGetVariableNull, sizeof(ValidationStateVar) );     // Size
   will_return( StubGetVariableNull, &ValidationStateVar );            // DataPtr
@@ -1511,7 +1537,6 @@ LockOnStatePoliciesShouldApplyToNamespaces (
   EFI_STATUS  PolicyCheck;
   UINT8       DummyData[12];
   UINT8       ValidationStateVar;
-  UINTN       ExpectedDataSize;
   UT_ASSERT_TRUE( InitExpVarPolicyStrings( &ValidationPolicy, NULL, TEST_VAR_2_NAME ) );
 
 
@@ -1535,8 +1560,7 @@ LockOnStatePoliciesShouldApplyToNamespaces (
   // Set consistent expectations on what the calls are looking for.
   expect_memory_count( StubGetVariableNull, VariableName, TEST_VAR_2_NAME, sizeof(TEST_VAR_2_NAME), 4 );
   expect_memory_count( StubGetVariableNull, VendorGuid, &mTestGuid2, sizeof(mTestGuid2), 4 );
-  ExpectedDataSize = 1;
-  expect_memory_count( StubGetVariableNull, DataSize, &ExpectedDataSize, sizeof(ExpectedDataSize), 4 );
+  expect_any_always( StubGetVariableNull, DataSize );
 
   // With a policy, make sure that writes still work, since the variable doesn't exist.
   will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
@@ -1648,9 +1672,14 @@ LockOnStateShouldHandleErrorsGracefully (
 
   // Verify that state variables that are the wrong size won't lock the variable.
   will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
-  will_return( StubGetVariableNull, 0 );                              // Size
+  will_return( StubGetVariableNull, 10 );                             // Size
   will_return( StubGetVariableNull, NULL );                           // DataPtr
   will_return( StubGetVariableNull, EFI_BUFFER_TOO_SMALL );           // Status
+
+  will_return( StubGetVariableNull, TEST_POLICY_ATTRIBUTES_NULL );    // Attributes
+  will_return( StubGetVariableNull, 10 );                             // Size
+  will_return( StubGetVariableNull, DummyData );                      // DataPtr
+  will_return( StubGetVariableNull, EFI_SUCCESS );                    // Status
   PolicyCheck = ValidateSetVariable( TEST_VAR_1_NAME,
                                     &mTestGuid1,
                                     VARIABLE_ATTRIBUTE_BS_RT_AT,

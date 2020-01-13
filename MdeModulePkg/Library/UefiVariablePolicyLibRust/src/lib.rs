@@ -126,6 +126,25 @@ unsafe fn get_variable(variable_name: &String, vendor_guid: &efi::Guid) -> Resul
         0 as *mut u8
         );
 
+      // If and only if the error is BUFFER_TOO_SMALL, try allocating
+      // and setting the buffer.
+      if get_var_status == efi::Status::BUFFER_TOO_SMALL && data_size > 0 {
+        let mut data_buffer: Vec<u8> = Vec::with_capacity(data_size);
+
+        get_var_status = (lib_state.get_variable_helper)(
+                              variable_name_char16.as_ptr() as *const efi::Char16,
+                              vendor_guid as *const efi::Guid,
+                              &mut attributes as *mut u32,
+                              &mut data_size as *mut usize,
+                              data_buffer.as_mut_ptr()
+                              );
+
+        if get_var_status == efi::Status::SUCCESS {
+          data_buffer.set_len(data_size);
+          return Ok((data_buffer, attributes));
+        }
+      }
+
       Err(get_var_status)
     },
     None => Err(efi::Status::NOT_READY)
@@ -748,8 +767,21 @@ impl VariablePolicyList {
               }
             }
           }
+        },
+        LockPolicyType::LockOnVarState(var_state) => {
+          match unsafe { get_variable(&var_state.name, &var_state.namespace) } {
+            Ok((var_data, var_attr)) => {
+              if var_data.len() == 1 && var_data[0] == var_state.value {
+                return false;
+              }
+            },
+            Err(err_status) => {
+              if err_status != efi::Status::NOT_FOUND {
+                return false;
+              }
+            }
+          }
         }
-        LockPolicyType::LockOnVarState(_) => return false, // TODO
       }
     }
 
