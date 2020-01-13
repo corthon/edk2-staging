@@ -31,6 +31,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 // #ifndef INTERNAL_UNIT_TEST
 // #error Make sure to build thie with INTERNAL_UNIT_TEST enabled! Otherwise, some important tests may be skipped!
 // #endif
+// Don't build these for the Rust tests.
+#undef INTERNAL_UNIT_TEST
 
 
 #define UNIT_TEST_NAME        "UEFI Variable Policy UnitTest"

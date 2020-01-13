@@ -22,9 +22,13 @@
 
 [Components]
   #
-  # Build HOST_APPLICATION that tests the SafeIntLib
+  # Build any test HOST_APPLICATIONs
   #
   MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf {
     <LibraryClasses>
       UefiVariablePolicyLib|MdeModulePkg/Library/UefiVariablePolicyLib/UefiVariablePolicyLib.inf
+  }
+  MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf {
+    <LibraryClasses>
+      UefiVariablePolicyLib|MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyLib.inf
   }

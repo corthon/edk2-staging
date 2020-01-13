@@ -1,19 +1,76 @@
-#![allow(dead_code)]
+#![crate_type = "staticlib"]
+
+#![allow(unused)]
 
 #![no_std]
 
+#![feature(alloc_error_handler)]
+
+// When building for production, don't use StdLib.
 #[cfg(test)]
 #[macro_use]
 extern crate std;
 
-extern crate alloc;
+// When building for production, will get this from the RustPkg.
+#[cfg(test)]
 extern crate r_efi;
+
+extern crate alloc;
 
 use alloc::slice;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::mem;
 use r_efi::efi;
+
+
+//=====================================================================================================================
+//
+// NO_STD REQUIRED PREAMBLE STUFF
+// This section is defined entirely to satisfy Rust's no_std requirements.
+//
+use core::panic::PanicInfo;
+use core::alloc::{GlobalAlloc, Layout};
+use core::ffi::c_void;
+
+extern "C" {
+  fn AllocatePool (Size: usize) -> *mut c_void;
+  fn AllocateZeroPool (Size: usize) -> *mut c_void;
+  fn FreePool (Buffer: *mut c_void);
+}
+
+#[panic_handler]
+#[allow(clippy::empty_loop)]
+fn panic(_info: &PanicInfo) -> ! {
+    loop {}
+}
+
+#[alloc_error_handler]
+fn alloc_error_handler(layout: core::alloc::Layout) -> !
+{
+    loop {}
+}
+
+pub struct MyAllocator;
+unsafe impl GlobalAlloc for MyAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+      let size = layout.size();
+      let align = layout.align();
+      if align > 8 {
+        return core::ptr::null_mut();
+      }
+
+      unsafe { AllocatePool (size) as *mut u8 }
+    }
+    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+      unsafe { FreePool (ptr as *mut c_void); }
+    }
+}
+
+#[global_allocator]
+static ALLOCATOR: MyAllocator = MyAllocator;
+//=====================================================================================================================
+
 
 #[derive(Debug)]
 enum LockPolicyType {
