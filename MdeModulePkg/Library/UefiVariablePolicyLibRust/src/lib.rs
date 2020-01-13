@@ -94,13 +94,26 @@ static mut INITIALIZED_STATE: Option<LibState> = None;
 
 #[no_mangle]
 #[export_name = "RegisterVariablePolicy"]
-pub extern "win64" fn register_variable_policy(new_policy: *const RawVariablePolicyEntry) -> efi::Status {
-  let state = unsafe { &INITIALIZED_STATE };
-  if state.is_none() {
-    return efi::Status::NOT_READY;
-  }
+pub extern "win64" fn register_variable_policy(policy_data: *const RawVariablePolicyEntry) -> efi::Status {
+  let state = unsafe { &mut INITIALIZED_STATE };
 
-  efi::Status::SUCCESS
+  match state {
+    Some(lib_state) => {
+      if lib_state.interface_locked { return efi::Status::WRITE_PROTECTED; }
+
+      // First, we need to turn the raw data into an entry.
+      match VariablePolicyEntry::from_raw(policy_data) {
+        Ok(new_policy) => {
+          match lib_state.policy_list.add_policy(new_policy) {
+            true => efi::Status::SUCCESS,
+            false => efi::Status::ALREADY_STARTED
+          }
+        }
+        Err(err_status) => err_status
+      }
+    },
+    None => efi::Status::NOT_READY
+  }
 }
 
 #[no_mangle]
@@ -113,23 +126,36 @@ pub extern "win64" fn validate_set_variable (
     data: *const u8
     ) -> efi::Status {
   let state = unsafe { &INITIALIZED_STATE };
-  if state.is_none() {
-    return efi::Status::NOT_READY;
-  }
 
-  efi::Status::SUCCESS
+  match state {
+    Some(lib_state) => {
+      if lib_state.protection_disabled { return efi::Status::SUCCESS; }
+
+      // TODO: Turn EFI params into Rust params.
+      // TODO: Call policy_list.is_set_variable_valid().
+
+      efi::Status::SUCCESS
+    },
+    None => efi::Status::NOT_READY
+  }
 }
 
 #[no_mangle]
 #[export_name = "DisableVariablePolicy"]
 pub extern "win64" fn disable_variable_policy (
     ) -> efi::Status {
-  let state = unsafe { &INITIALIZED_STATE };
-  if state.is_none() {
-    return efi::Status::NOT_READY;
-  }
+  let state = unsafe { &mut INITIALIZED_STATE };
 
-  efi::Status::SUCCESS
+  match state {
+    Some(lib_state) => {
+      if lib_state.protection_disabled { return efi::Status::ALREADY_STARTED; }
+      if lib_state.interface_locked { return efi::Status::WRITE_PROTECTED; }
+
+      lib_state.protection_disabled = true;
+      efi::Status::SUCCESS
+    },
+    None => efi::Status::NOT_READY
+  }
 }
 
 #[no_mangle]
@@ -151,22 +177,36 @@ pub extern "win64" fn dump_variable_policy (
 pub extern "win64" fn is_variable_policy_enabled (
     ) -> efi::Boolean {
   let state = unsafe { &INITIALIZED_STATE };
-  if state.is_none() {
-    return efi::Boolean::FALSE;
+
+  match state {
+    Some(lib_state) => {
+      match lib_state.protection_disabled {
+        true => efi::Boolean::FALSE,
+        false => efi::Boolean::TRUE,
+      }
+    },
+    None => efi::Boolean::FALSE
   }
-    efi::Boolean::TRUE
 }
 
 #[no_mangle]
 #[export_name = "LockVariablePolicy"]
 pub extern "win64" fn lock_variable_policy (
     ) -> efi::Status {
-  let state = unsafe { &INITIALIZED_STATE };
-  if state.is_none() {
-    return efi::Status::NOT_READY;
-  }
+  let state = unsafe { &mut INITIALIZED_STATE };
 
-    efi::Status::SUCCESS
+  match state {
+    Some(lib_state) => {
+      match lib_state.interface_locked {
+        true => efi::Status::WRITE_PROTECTED,
+        false => {
+          lib_state.interface_locked = true;
+          efi::Status::SUCCESS
+        }
+      }
+    },
+    None => efi::Status::NOT_READY
+  }
 }
 
 #[no_mangle]
