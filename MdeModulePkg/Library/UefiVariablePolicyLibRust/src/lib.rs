@@ -72,6 +72,99 @@ static ALLOCATOR: MyAllocator = MyAllocator;
 //=====================================================================================================================
 
 
+//=====================================================================================================================
+//
+// LIBRARY IMPLEMENTATION
+// This section is the UEFI-facing library interface.
+// All transition to Rust (with the exception of VariablePolicyEntry::from_raw()) should be here.
+//
+type EfiGetVariable = extern "win64" fn(_: *const efi::Char16,
+                                        _: *const efi::Guid,
+                                        _: *mut u32,
+                                        _: *mut usize,
+                                        _: *mut u8) -> efi::Status;
+
+#[no_mangle]
+#[export_name = "RegisterVariablePolicy"]
+pub extern "win64" fn register_variable_policy (
+    new_policy: *const RawVariablePolicyEntry
+    ) -> efi::Status {
+    efi::Status::SUCCESS
+}
+
+#[no_mangle]
+#[export_name = "ValidateSetVariable"]
+pub extern "win64" fn validate_set_variable (
+    variable_name: *const efi::Char16,
+    vendor_guid: *const efi::Guid,
+    attributes: u32,
+    data_size: usize,
+    data: *const u8
+    ) -> efi::Status {
+    efi::Status::SUCCESS
+}
+
+#[no_mangle]
+#[export_name = "DisableVariablePolicy"]
+pub extern "win64" fn disable_variable_policy (
+    ) -> efi::Status {
+    efi::Status::SUCCESS
+}
+
+#[no_mangle]
+#[export_name = "DumpVariablePolicy"]
+pub extern "win64" fn dump_variable_policy (
+    policy: *mut u8,
+    size: *mut usize
+    ) -> efi::Status {
+    efi::Status::SUCCESS
+}
+
+#[no_mangle]
+#[export_name = "IsVariablePolicyEnabled"]
+pub extern "win64" fn is_variable_policy_enabled (
+    ) -> efi::Boolean {
+    efi::Boolean::TRUE
+}
+
+#[no_mangle]
+#[export_name = "LockVariablePolicy"]
+pub extern "win64" fn lock_variable_policy (
+    ) -> efi::Status {
+    efi::Status::SUCCESS
+}
+
+#[no_mangle]
+#[export_name = "IsVariablePolicyInterfaceLocked"]
+pub extern "win64" fn is_variable_policy_interface_locked (
+    ) -> efi::Boolean {
+    efi::Boolean::FALSE
+}
+
+#[no_mangle]
+#[export_name = "InitVariablePolicyLib"]
+pub extern "win64" fn init_variable_policy_lib (
+    get_variable_helper: EfiGetVariable
+    ) -> efi::Status {
+    efi::Status::SUCCESS
+}
+
+#[no_mangle]
+#[export_name = "IsVariablePolicyLibInitialized"]
+pub extern "win64" fn is_variable_policy_lib_initialized (
+    ) -> efi::Boolean {
+    efi::Boolean::TRUE
+}
+
+#[no_mangle]
+#[export_name = "DeinitVariablePolicyLib"]
+pub extern "win64" fn deinit_variable_policy_lib (
+    ) -> efi::Status {
+    efi::Status::SUCCESS
+}
+//=====================================================================================================================
+
+
 #[derive(Debug)]
 enum LockPolicyType {
   NoLock,
@@ -120,7 +213,7 @@ struct VariablePolicyList {
 
 #[repr(C)]
 #[derive(Debug)]
-struct RawVariablePolicyEntry {
+pub struct RawVariablePolicyEntry {
   version:            u32,
   size:               u16,
   offset_to_name:     u16,
