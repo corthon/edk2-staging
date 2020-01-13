@@ -28,13 +28,13 @@
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
 
 
 [LibraryClasses]
   BaseLib
   DebugLib
   UnitTestLib
-  UnitTestAssertLib
   PrintLib
   UefiVariablePolicyLib
   BaseMemoryLib
