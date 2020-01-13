@@ -27,9 +27,7 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  UnitTestPkg/UnitTestPkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec
 
 
 [LibraryClasses]

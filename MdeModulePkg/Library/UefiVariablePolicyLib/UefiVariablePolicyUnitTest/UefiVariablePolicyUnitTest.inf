@@ -27,16 +27,14 @@
 
 [Packages]
   MdePkg/MdePkg.dec
-  UnitTestPkg/UnitTestPkg.dec
   MdeModulePkg/MdeModulePkg.dec
-  CmockaHostUnitTestPkg/CmockaHostUnitTestPkg.dec
+  UnitTestFrameworkPkg/UnitTestFrameworkPkg.dec
 
 
 [LibraryClasses]
   BaseLib
   DebugLib
   UnitTestLib
-  UnitTestAssertLib
   PrintLib
   UefiVariablePolicyLib
   BaseMemoryLib

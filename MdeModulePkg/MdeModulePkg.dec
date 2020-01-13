@@ -29,6 +29,10 @@
   ##  @libraryclass  Defines a set of methods to reset whole system.
   ResetSystemLib|Include/Library/ResetSystemLib.h
 
+  ## MU_CHANGE - Add the business logic library for UefiVariablePolicies.
+  ##  @libraryclass  Business logic for storing and testing variable policies
+  UefiVariablePolicyLib|Include/Library/UefiVariablePolicyLib.h
+
   ##  @libraryclass  Defines a set of helper functions for resetting the system.
   ResetUtilityLib|Include/Library/ResetUtilityLib.h
 
