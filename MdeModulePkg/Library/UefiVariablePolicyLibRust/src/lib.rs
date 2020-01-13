@@ -94,10 +94,13 @@ static mut INITIALIZED_STATE: Option<LibState> = None;
 
 #[no_mangle]
 #[export_name = "RegisterVariablePolicy"]
-pub extern "win64" fn register_variable_policy (
-    new_policy: *const RawVariablePolicyEntry
-    ) -> efi::Status {
-    efi::Status::SUCCESS
+pub extern "win64" fn register_variable_policy(new_policy: *const RawVariablePolicyEntry) -> efi::Status {
+  let state = unsafe { &INITIALIZED_STATE };
+  if state.is_none() {
+    return efi::Status::NOT_READY;
+  }
+
+  efi::Status::SUCCESS
 }
 
 #[no_mangle]
@@ -109,14 +112,24 @@ pub extern "win64" fn validate_set_variable (
     data_size: usize,
     data: *const u8
     ) -> efi::Status {
-    efi::Status::SUCCESS
+  let state = unsafe { &INITIALIZED_STATE };
+  if state.is_none() {
+    return efi::Status::NOT_READY;
+  }
+
+  efi::Status::SUCCESS
 }
 
 #[no_mangle]
 #[export_name = "DisableVariablePolicy"]
 pub extern "win64" fn disable_variable_policy (
     ) -> efi::Status {
-    efi::Status::SUCCESS
+  let state = unsafe { &INITIALIZED_STATE };
+  if state.is_none() {
+    return efi::Status::NOT_READY;
+  }
+
+  efi::Status::SUCCESS
 }
 
 #[no_mangle]
@@ -125,13 +138,22 @@ pub extern "win64" fn dump_variable_policy (
     policy: *mut u8,
     size: *mut usize
     ) -> efi::Status {
-    efi::Status::SUCCESS
+  let state = unsafe { &INITIALIZED_STATE };
+  if state.is_none() {
+    return efi::Status::NOT_READY;
+  }
+
+  efi::Status::SUCCESS
 }
 
 #[no_mangle]
 #[export_name = "IsVariablePolicyEnabled"]
 pub extern "win64" fn is_variable_policy_enabled (
     ) -> efi::Boolean {
+  let state = unsafe { &INITIALIZED_STATE };
+  if state.is_none() {
+    return efi::Boolean::FALSE;
+  }
     efi::Boolean::TRUE
 }
 
@@ -139,6 +161,11 @@ pub extern "win64" fn is_variable_policy_enabled (
 #[export_name = "LockVariablePolicy"]
 pub extern "win64" fn lock_variable_policy (
     ) -> efi::Status {
+  let state = unsafe { &INITIALIZED_STATE };
+  if state.is_none() {
+    return efi::Status::NOT_READY;
+  }
+
     efi::Status::SUCCESS
 }
 
@@ -146,7 +173,17 @@ pub extern "win64" fn lock_variable_policy (
 #[export_name = "IsVariablePolicyInterfaceLocked"]
 pub extern "win64" fn is_variable_policy_interface_locked (
     ) -> efi::Boolean {
-    efi::Boolean::FALSE
+  let state = unsafe { &INITIALIZED_STATE };
+
+  match state {
+    Some(lib_state) => {
+      match lib_state.interface_locked {
+        true => efi::Boolean::TRUE,
+        false => efi::Boolean::FALSE,
+      }
+    },
+    None => efi::Boolean::FALSE
+  }
 }
 
 #[no_mangle]
@@ -154,14 +191,33 @@ pub extern "win64" fn is_variable_policy_interface_locked (
 pub extern "win64" fn init_variable_policy_lib (
     get_variable_helper: EfiGetVariable
     ) -> efi::Status {
-    efi::Status::SUCCESS
+  let state = unsafe { &INITIALIZED_STATE };
+
+  match state {
+    Some(_) => efi::Status::ALREADY_STARTED,
+    None => {
+      let new_state = Some(LibState {
+        policy_list: VariablePolicyList::new(),
+        get_variable_helper: get_variable_helper,
+        interface_locked: false,
+        protection_disabled: false,
+      });
+      unsafe { INITIALIZED_STATE = new_state; }
+
+      efi::Status::SUCCESS
+    }
+  }
 }
 
 #[no_mangle]
 #[export_name = "IsVariablePolicyLibInitialized"]
 pub extern "win64" fn is_variable_policy_lib_initialized (
     ) -> efi::Boolean {
-    efi::Boolean::TRUE
+  let state = unsafe { &INITIALIZED_STATE };
+  match state {
+    Some(_) => efi::Boolean::TRUE,
+    None => efi::Boolean::FALSE
+  }
 }
 
 #[no_mangle]
@@ -170,7 +226,11 @@ pub extern "win64" fn deinit_variable_policy_lib (
     ) -> efi::Status {
   let state = unsafe { &INITIALIZED_STATE };
   match state {
-    Some(_) => efi::Status::SUCCESS,
+    Some(_) => {
+      // TODO: Make sure that this deinits everything.
+      unsafe{ INITIALIZED_STATE = None; }
+      efi::Status::SUCCESS
+    },
     None => efi::Status::NOT_READY
   }
 }
