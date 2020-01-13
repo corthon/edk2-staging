@@ -106,6 +106,32 @@ unsafe fn char16_to_string (string_in: *const efi::Char16) -> String {
   String::from_utf16_lossy(slice::from_raw_parts(string_in_u16, string_len as usize))
 }
 
+// Quick helper to wrap EfiGetVariable and turn Rust params into UEFI params.
+unsafe fn get_variable(variable_name: &String, vendor_guid: &efi::Guid) -> Result<(Vec<u8>, u32), efi::Status> {
+  match &INITIALIZED_STATE {
+    Some(lib_state) => {
+      let mut variable_name_char16: Vec<u16> = variable_name.encode_utf16().collect();
+      let mut data_size: usize = 0;
+      let mut attributes: u32 = 0;
+
+      // Set the last char on variable_name_char16.
+      variable_name_char16.push(0x0000);
+
+      // Make the first call to get the variable size.
+      let mut get_var_status = (lib_state.get_variable_helper)(
+        variable_name_char16.as_ptr() as *const efi::Char16,
+        vendor_guid as *const efi::Guid,
+        &mut attributes as *mut u32,
+        &mut data_size as *mut usize,
+        0 as *mut u8
+        );
+
+      Err(get_var_status)
+    },
+    None => Err(efi::Status::NOT_READY)
+  }
+}
+
 #[no_mangle]
 #[export_name = "RegisterVariablePolicy"]
 pub extern "win64" fn register_variable_policy(policy_data: *const RawVariablePolicyEntry) -> efi::Status {
@@ -154,7 +180,7 @@ pub extern "win64" fn validate_set_variable (
       let is_valid = lib_state.policy_list.is_set_variable_valid(&my_variable_name, &my_vendor_guid, attributes, my_data);
       match is_valid {
         true => efi::Status::SUCCESS,
-        false => efi::Status::WRITE_PROTECTED
+        false => efi::Status::INVALID_PARAMETER
       }
     },
     None => efi::Status::NOT_READY
@@ -709,7 +735,20 @@ impl VariablePolicyList {
       match &matched_policy.lock_policy_type {
         LockPolicyType::NoLock => (),
         LockPolicyType::LockNow => return false,
-        LockPolicyType::LockOnCreate => return false, // TODO
+
+        // If LockOnCreate, we should only pass if NOT_FOUND.
+        // Otherwise, can go ahead and return an error.
+        LockPolicyType::LockOnCreate => {
+          match unsafe { get_variable(variable_name, vendor_guid) } {
+            Ok(_) => return false,
+            Err(err_status) => {
+              match err_status {
+                efi::Status::NOT_FOUND => (),
+                _ => return false
+              }
+            }
+          }
+        }
         LockPolicyType::LockOnVarState(_) => return false, // TODO
       }
     }
