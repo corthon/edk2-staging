@@ -1307,6 +1307,7 @@ mod tests {
     assert!(VariablePolicyEntry::from_raw(raw_var_policy_header as *const RawVariablePolicyEntry).is_err());
   }
 
+  // TODO: Figure out what in this test is causing [intermittent] heap corruption.
   #[test]
   fn from_raw_should_reject_unpacked_policies() {
     let mut policy_buffer = variable_policy_entry_to_vec_u8(&VariablePolicyEntry {
