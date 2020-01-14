@@ -1307,7 +1307,6 @@ mod tests {
     assert!(VariablePolicyEntry::from_raw(raw_var_policy_header as *const RawVariablePolicyEntry).is_err());
   }
 
-  // TODO: Figure out what in this test is causing [intermittent] heap corruption.
   #[test]
   fn from_raw_should_reject_unpacked_policies() {
     let mut policy_buffer = variable_policy_entry_to_vec_u8(&VariablePolicyEntry {
@@ -1323,10 +1322,10 @@ mod tests {
       }),
       name: Some(String::from(TEST_VAR_NAME_1)),
     });
-    let raw_var_policy_header = policy_buffer.as_ptr() as *mut RawVariablePolicyEntry;
 
     // Increase the size and move the Name out a bit.
     policy_buffer.reserve(mem::size_of::<u16>());
+    let raw_var_policy_header = policy_buffer.as_ptr() as *mut RawVariablePolicyEntry;
     unsafe {
       (*raw_var_policy_header).size += mem::size_of::<u16>() as u16;
       (*raw_var_policy_header).offset_to_name += mem::size_of::<u16>() as u16;
@@ -1336,6 +1335,7 @@ mod tests {
       string_to_char16(&String::from(TEST_VAR_NAME_1), dest_buffer);
     }
     assert!(VariablePolicyEntry::from_raw(raw_var_policy_header as *const RawVariablePolicyEntry).is_err());
+
 
     // Reintialize without the state policy and try the same test.
     let mut policy_buffer = variable_policy_entry_to_vec_u8(&VariablePolicyEntry {
@@ -1347,8 +1347,8 @@ mod tests {
       lock_policy_type: LockPolicyType::NoLock,
       name: Some(String::from(TEST_VAR_NAME_1)),
     });
-    let raw_var_policy_header = policy_buffer.as_ptr() as *mut RawVariablePolicyEntry;
     policy_buffer.reserve(mem::size_of::<u16>());
+    let raw_var_policy_header = policy_buffer.as_ptr() as *mut RawVariablePolicyEntry;
     unsafe {
       (*raw_var_policy_header).size += mem::size_of::<u16>() as u16;
       (*raw_var_policy_header).offset_to_name += mem::size_of::<u16>() as u16;
