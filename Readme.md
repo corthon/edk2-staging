@@ -2,6 +2,28 @@
 
 **This project is an experiment and should not be used production workloads.**
 
+## Notes for the rust_and_tests branch
+
+`rustup update` - Make sure you've got some good Rust.
+`cargo install cargo-xbuild` - Make sure you've got the cross build tools.
+
+`rustup default nightly` - Switch to nightly for certain build features.
+
+`rm Conf/tools_def.txt Conf/build_rules.txt` - To make sure you get the best config.
+
+`rustup component add rust-src` - To make sure you can build.
+
+Make sure to build r_efi Externals prior to build.
+Change to the RustPkg/External/r-efi directory.
+For HOST_APPLICATION: `cargo build`
+For UEFI targets:
+```
+cargo xbuild --release --target x86_64-unknown-uefi
+cargo xbuild --target x86_64-unknown-uefi
+cargo xbuild --release --target i686-unknown-uefi
+cargo xbuild --target i686-unknown-uefi
+```
+
 ### Background
 
 There have been various instances of advocacy https://msrc-blog.microsoft.com/2019/11/07/using-rust-in-windows/ for building system level software in Rust https://www.rust-lang.org/.
