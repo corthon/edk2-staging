@@ -18,6 +18,8 @@ use alloc::vec::Vec;
 use core::mem;
 use r_efi::efi;
 
+// TODO: Check for truncation in every cast.
+
 
 //=====================================================================================================================
 //
@@ -228,14 +230,36 @@ pub extern "win64" fn disable_variable_policy (
 #[export_name = "DumpVariablePolicy"]
 pub extern "win64" fn dump_variable_policy (
     policy: *mut u8,
-    size: *mut usize
+    size: *mut u32
     ) -> efi::Status {
   let state = unsafe { &INITIALIZED_STATE };
-  if state.is_none() {
-    return efi::Status::NOT_READY;
-  }
 
-  efi::Status::SUCCESS
+  match state {
+    Some(lib_state) => {
+      unsafe {
+        // Validate some initial state.
+        if size.is_null()  || (*size > 0 && policy.is_null()) {
+          return efi::Status::INVALID_PARAMETER;
+        }
+
+        // First, we need to serialize the policy list.
+        let policy_buffer = lib_state.policy_list.to_raw();
+
+        if (*size as usize) < policy_buffer.len() {
+          *size = policy_buffer.len() as u32;
+          efi::Status::BUFFER_TOO_SMALL
+        }
+        else {
+          for index in 0..policy_buffer.len() {
+            *(policy.offset(index as isize)) = policy_buffer[index];
+          }
+          *size = policy_buffer.len() as u32;
+          efi::Status::SUCCESS
+        }
+      }
+    },
+    None => efi::Status::NOT_READY
+  }
 }
 
 #[no_mangle]
@@ -615,6 +639,83 @@ impl VariablePolicyEntry {
     }
   }
 
+  fn to_raw(&self) -> Vec<u8> {
+    // Start figuring out how much memory we will need to hold this thing.
+    let mut buffer_size: usize = RAW_VARIABLE_POLICY_ENTRY_SIZE;
+    if let LockPolicyType::LockOnVarState(var_state) = &self.lock_policy_type {
+      buffer_size += RAW_VAR_STATE_LOCK_SIZE;
+      // Add a sufficient number of CHAR16 + NULL.
+      buffer_size += (var_state.name.len() + 1) * mem::size_of::<efi::Char16>();
+    }
+    let name_offset: usize = buffer_size;
+    if let Some(var_name) = &self.name {
+      // Add a sufficient number of CHAR16 + NULL.
+      buffer_size += (var_name.len() + 1) * mem::size_of::<efi::Char16>();
+    }
+
+    // Great, now we've got a size, we can theoretically carve off some memory.
+    let mut raw_buffer: Vec<u8> = Vec::with_capacity(buffer_size);
+    let raw_buffer_ptr: *mut u8 = raw_buffer.as_mut_ptr();
+
+    // Heck yes. Start, uh... filling things in.
+    unsafe {
+      // Start by setting all of the header data.
+      let var_pol_header = raw_buffer_ptr as *mut RawVariablePolicyEntry;
+      (*var_pol_header).version = VariablePolicyEntry::RAW_ENTRY_REVISION;
+      (*var_pol_header).size = buffer_size as u16;
+      (*var_pol_header).offset_to_name = name_offset as u16;
+      (*var_pol_header).namespace = self.namespace;
+      (*var_pol_header).min_size = self.min_size;
+      (*var_pol_header).max_size = self.max_size;
+      (*var_pol_header).attr_cant_have = self.attr_cant_have;
+      (*var_pol_header).attr_must_have = self.attr_must_have;
+      (*var_pol_header).lock_policy_type = match &self.lock_policy_type {
+        LockPolicyType::NoLock => RawLockPolicyType::NO_LOCK,
+        LockPolicyType::LockNow => RawLockPolicyType::LOCK_NOW,
+        LockPolicyType::LockOnCreate => RawLockPolicyType::LOCK_ON_CREATE,
+        LockPolicyType::LockOnVarState(_) => RawLockPolicyType::LOCK_ON_VAR_STATE
+      };
+      (*var_pol_header).padding_3 = [0x00, 0x00, 0x00];
+
+      // Now update the VarStateLock, if set.
+      if let LockPolicyType::LockOnVarState(var_state) = &self.lock_policy_type {
+        let var_state_lock_header = raw_buffer_ptr.offset(RAW_VARIABLE_POLICY_ENTRY_SIZE as isize) as *mut RawVarStateLock;
+        (*var_state_lock_header).namespace = var_state.namespace;
+        (*var_state_lock_header).value = var_state.value;
+        (*var_state_lock_header).padding = 0;
+
+        // Need to copy the var_state string to the correct offset.
+        // TODO: Make sure this section behaves correctly for possible double chars.
+        let var_state_name_ptr = (var_state_lock_header as *mut u8)
+                                    .offset(RAW_VAR_STATE_LOCK_SIZE as isize)
+                                    as *mut u16;
+        let mut char16_iter = var_state.name.encode_utf16().enumerate();
+        while let Some((index, char)) = char16_iter.next() {
+          *(var_state_name_ptr.offset(index as isize)) = char;
+        }
+        // Set the terminating NULL.
+        *(var_state_name_ptr.offset(var_state.name.len() as isize)) = 0x0000;
+      }
+
+      // Now update the name string, if provided.
+      // TODO: Make sure this section behaves correctly for possible double chars.
+      if let Some(var_name) = &self.name {
+        let var_name_ptr = raw_buffer_ptr.offset(name_offset as isize) as *mut u16;
+        let mut char16_iter = var_name.encode_utf16().enumerate();
+        while let Some((index, char)) = char16_iter.next() {
+          *(var_name_ptr.offset(index as isize)) = char;
+        }
+        // Set the terminating NULL.
+        *(var_name_ptr.offset(var_name.len() as isize)) = 0x0000;
+      }
+
+      // Finally, update the contents of the Vector.
+      raw_buffer.set_len(buffer_size);
+    } // unsafe {}
+
+    raw_buffer
+  }
+
   fn eval_match(&self, variable_name_option: Option<&String>, vendor_guid: &efi::Guid) -> Option<u8> {
     let mut match_priority: Option<u8> = None;
 
@@ -698,6 +799,14 @@ impl VariablePolicyList {
       self.inner.push(policy);
       true
     }
+  }
+
+  pub fn to_raw(&self) -> Vec<u8> {
+    let mut output_buffer: Vec<u8> = Vec::new();
+    for next_policy in &self.inner {
+      output_buffer.extend(next_policy.to_raw());
+    }
+    output_buffer
   }
 
   pub fn get_best_match(&self, variable_name_option: Option<&String>, vendor_guid: &efi::Guid) -> (Option<&VariablePolicyEntry>, u8) {
@@ -1540,5 +1649,24 @@ mod tests {
       r_efi::system::VARIABLE_NON_VOLATILE | r_efi::system::VARIABLE_BOOTSERVICE_ACCESS,
       &[ 0xAA; (TEST_POLICY_MIN_SIZE_10 + 1) as usize ]
       ));
+  }
+
+  #[test]
+  fn to_raw_and_test_encoding_should_be_identical() {
+    let new_policy = VariablePolicyEntry {
+      namespace: TEST_VAR_GUID_1,
+      name: Some(String::from(TEST_VAR_NAME_1)),
+      min_size: TEST_POLICY_MIN_SIZE_NULL,
+      max_size: TEST_POLICY_MAX_SIZE_NULL,
+      attr_cant_have: TEST_POLICY_ATTRIBUTES_NULL,
+      attr_must_have: TEST_POLICY_ATTRIBUTES_NULL,
+      lock_policy_type: LockPolicyType::LockOnVarState(VarStateLock {
+        namespace: TEST_VAR_GUID_2,
+        name: String::from(TEST_VAR_NAME_2),
+        value: 1,
+      }),
+    };
+
+    assert_eq!(new_policy.to_raw(), variable_policy_entry_to_vec_u8(&new_policy));
   }
 }
