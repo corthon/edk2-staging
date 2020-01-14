@@ -1309,7 +1309,7 @@ mod tests {
 
   #[test]
   fn from_raw_should_reject_unpacked_policies() {
-    let policy_buffer = variable_policy_entry_to_vec_u8(&VariablePolicyEntry {
+    let mut policy_buffer = variable_policy_entry_to_vec_u8(&VariablePolicyEntry {
       namespace: TEST_VAR_GUID_1,
       min_size: TEST_POLICY_MIN_SIZE_NULL,
       max_size: TEST_POLICY_MAX_SIZE_NULL,
@@ -1325,9 +1325,10 @@ mod tests {
     let raw_var_policy_header = policy_buffer.as_ptr() as *mut RawVariablePolicyEntry;
 
     // Increase the size and move the Name out a bit.
+    policy_buffer.reserve(mem::size_of::<u16>());
     unsafe {
-      (*raw_var_policy_header).size += mem::size_of::<u16> as u16;
-      (*raw_var_policy_header).offset_to_name += mem::size_of::<u16> as u16;
+      (*raw_var_policy_header).size += mem::size_of::<u16>() as u16;
+      (*raw_var_policy_header).offset_to_name += mem::size_of::<u16>() as u16;
       let dest_buffer = (raw_var_policy_header as *const u8)
                           .offset((*raw_var_policy_header).offset_to_name as isize)
                           as *mut u16;
@@ -1336,7 +1337,7 @@ mod tests {
     assert!(VariablePolicyEntry::from_raw(raw_var_policy_header as *const RawVariablePolicyEntry).is_err());
 
     // Reintialize without the state policy and try the same test.
-    let policy_buffer = variable_policy_entry_to_vec_u8(&VariablePolicyEntry {
+    let mut policy_buffer = variable_policy_entry_to_vec_u8(&VariablePolicyEntry {
       namespace: TEST_VAR_GUID_1,
       min_size: TEST_POLICY_MIN_SIZE_NULL,
       max_size: TEST_POLICY_MAX_SIZE_NULL,
@@ -1346,9 +1347,10 @@ mod tests {
       name: Some(String::from(TEST_VAR_NAME_1)),
     });
     let raw_var_policy_header = policy_buffer.as_ptr() as *mut RawVariablePolicyEntry;
+    policy_buffer.reserve(mem::size_of::<u16>());
     unsafe {
-      (*raw_var_policy_header).size += mem::size_of::<u16> as u16;
-      (*raw_var_policy_header).offset_to_name += mem::size_of::<u16> as u16;
+      (*raw_var_policy_header).size += mem::size_of::<u16>() as u16;
+      (*raw_var_policy_header).offset_to_name += mem::size_of::<u16>() as u16;
       let dest_buffer = (raw_var_policy_header as *const u8)
                           .offset((*raw_var_policy_header).offset_to_name as isize)
                           as *mut u16;
