@@ -489,6 +489,8 @@
   MdeModulePkg/Universal/SmmCommunicationBufferDxe/SmmCommunicationBufferDxe.inf
   MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe.inf
 
+  MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyLib.inf
+
 [Components.X64]
   MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
 
