@@ -270,10 +270,7 @@ pub extern "win64" fn is_variable_policy_enabled (
 
   match state {
     Some(lib_state) => {
-      match lib_state.protection_disabled {
-        true => efi::Boolean::FALSE,
-        false => efi::Boolean::TRUE,
-      }
+      lib_state.protection_disabled.into()
     },
     None => efi::Boolean::FALSE
   }
@@ -307,10 +304,7 @@ pub extern "win64" fn is_variable_policy_interface_locked (
 
   match state {
     Some(lib_state) => {
-      match lib_state.interface_locked {
-        true => efi::Boolean::TRUE,
-        false => efi::Boolean::FALSE,
-      }
+      lib_state.interface_locked.into()
     },
     None => efi::Boolean::FALSE
   }
@@ -344,10 +338,7 @@ pub extern "win64" fn init_variable_policy_lib (
 pub extern "win64" fn is_variable_policy_lib_initialized (
     ) -> efi::Boolean {
   let state = unsafe { &INITIALIZED_STATE };
-  match state {
-    Some(_) => efi::Boolean::TRUE,
-    None => efi::Boolean::FALSE
-  }
+  state.is_some().into()
 }
 
 #[no_mangle]
