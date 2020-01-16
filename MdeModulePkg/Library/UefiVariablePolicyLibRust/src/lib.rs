@@ -270,7 +270,7 @@ pub extern "win64" fn is_variable_policy_enabled (
 
   match state {
     Some(lib_state) => {
-      lib_state.protection_disabled.into()
+      (!lib_state.protection_disabled).into()
     },
     None => efi::Boolean::FALSE
   }
