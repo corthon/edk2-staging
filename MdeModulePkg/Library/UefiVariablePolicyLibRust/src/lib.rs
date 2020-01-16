@@ -79,11 +79,11 @@ static ALLOCATOR: MyAllocator = MyAllocator;
 // This section is the UEFI-facing library interface.
 // All transition to Rust (with the exception of VariablePolicyEntry::from_raw()) should be here.
 //
-type EfiGetVariable = extern "win64" fn(_: *const efi::Char16,
-                                        _: *const efi::Guid,
-                                        _: *mut u32,
-                                        _: *mut usize,
-                                        _: *mut u8) -> efi::Status;
+type EfiGetVariable = extern fn(_: *const efi::Char16,
+                                _: *const efi::Guid,
+                                _: *mut u32,
+                                _: *mut usize,
+                                _: *mut u8) -> efi::Status;
 
 struct LibState {
   policy_list: VariablePolicyList,
@@ -155,7 +155,7 @@ unsafe fn get_variable(variable_name: &String, vendor_guid: &efi::Guid) -> Resul
 
 #[no_mangle]
 #[export_name = "RegisterVariablePolicy"]
-pub extern "win64" fn register_variable_policy(policy_data: *const RawVariablePolicyEntry) -> efi::Status {
+pub extern fn register_variable_policy(policy_data: *const RawVariablePolicyEntry) -> efi::Status {
   let state = unsafe { &mut INITIALIZED_STATE };
 
   match state {
@@ -179,7 +179,7 @@ pub extern "win64" fn register_variable_policy(policy_data: *const RawVariablePo
 
 #[no_mangle]
 #[export_name = "ValidateSetVariable"]
-pub extern "win64" fn validate_set_variable (
+pub extern fn validate_set_variable (
     variable_name: *const efi::Char16,
     vendor_guid: *const efi::Guid,
     attributes: u32,
@@ -210,7 +210,7 @@ pub extern "win64" fn validate_set_variable (
 
 #[no_mangle]
 #[export_name = "DisableVariablePolicy"]
-pub extern "win64" fn disable_variable_policy (
+pub extern fn disable_variable_policy (
     ) -> efi::Status {
   let state = unsafe { &mut INITIALIZED_STATE };
 
@@ -228,7 +228,7 @@ pub extern "win64" fn disable_variable_policy (
 
 #[no_mangle]
 #[export_name = "DumpVariablePolicy"]
-pub extern "win64" fn dump_variable_policy (
+pub extern fn dump_variable_policy (
     policy: *mut u8,
     size: *mut u32
     ) -> efi::Status {
@@ -264,7 +264,7 @@ pub extern "win64" fn dump_variable_policy (
 
 #[no_mangle]
 #[export_name = "IsVariablePolicyEnabled"]
-pub extern "win64" fn is_variable_policy_enabled (
+pub extern fn is_variable_policy_enabled (
     ) -> efi::Boolean {
   let state = unsafe { &INITIALIZED_STATE };
 
@@ -278,7 +278,7 @@ pub extern "win64" fn is_variable_policy_enabled (
 
 #[no_mangle]
 #[export_name = "LockVariablePolicy"]
-pub extern "win64" fn lock_variable_policy (
+pub extern fn lock_variable_policy (
     ) -> efi::Status {
   let state = unsafe { &mut INITIALIZED_STATE };
 
@@ -298,7 +298,7 @@ pub extern "win64" fn lock_variable_policy (
 
 #[no_mangle]
 #[export_name = "IsVariablePolicyInterfaceLocked"]
-pub extern "win64" fn is_variable_policy_interface_locked (
+pub extern fn is_variable_policy_interface_locked (
     ) -> efi::Boolean {
   let state = unsafe { &INITIALIZED_STATE };
 
@@ -312,7 +312,7 @@ pub extern "win64" fn is_variable_policy_interface_locked (
 
 #[no_mangle]
 #[export_name = "InitVariablePolicyLib"]
-pub extern "win64" fn init_variable_policy_lib (
+pub extern fn init_variable_policy_lib (
     get_variable_helper: EfiGetVariable
     ) -> efi::Status {
   let state = unsafe { &INITIALIZED_STATE };
@@ -335,7 +335,7 @@ pub extern "win64" fn init_variable_policy_lib (
 
 #[no_mangle]
 #[export_name = "IsVariablePolicyLibInitialized"]
-pub extern "win64" fn is_variable_policy_lib_initialized (
+pub extern fn is_variable_policy_lib_initialized (
     ) -> efi::Boolean {
   let state = unsafe { &INITIALIZED_STATE };
   state.is_some().into()
@@ -343,7 +343,7 @@ pub extern "win64" fn is_variable_policy_lib_initialized (
 
 #[no_mangle]
 #[export_name = "DeinitVariablePolicyLib"]
-pub extern "win64" fn deinit_variable_policy_lib (
+pub extern fn deinit_variable_policy_lib (
     ) -> efi::Status {
   let state = unsafe { &INITIALIZED_STATE };
   match state {
