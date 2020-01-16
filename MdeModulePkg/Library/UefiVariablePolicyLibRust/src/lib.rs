@@ -400,9 +400,7 @@ struct VarStateLock {
 }
 
 #[derive(Debug)]
-struct VariablePolicyList {
-  inner: Vec<VariablePolicyEntry>,
-}
+struct VariablePolicyList(Vec<VariablePolicyEntry>);
 
 #[repr(C)]
 #[derive(Debug)]
@@ -769,7 +767,7 @@ impl VariablePolicyEntry {
 
 impl VariablePolicyList {
   pub fn new() -> Self {
-    VariablePolicyList { inner: Vec::new() }
+    VariablePolicyList( Vec::new() )
   }
 
   pub fn add_policy(&mut self, policy: VariablePolicyEntry) -> bool {
@@ -787,14 +785,14 @@ impl VariablePolicyList {
     }
     // Otherwise, add it to the list and let's move on.
     else {
-      self.inner.push(policy);
+      self.0.push(policy);
       true
     }
   }
 
   pub fn to_raw(&self) -> Vec<u8> {
     let mut output_buffer: Vec<u8> = Vec::new();
-    for next_policy in &self.inner {
+    for next_policy in &self.0 {
       output_buffer.extend(next_policy.to_raw());
     }
     output_buffer
@@ -804,7 +802,7 @@ impl VariablePolicyList {
     let mut match_priority = VariablePolicyEntry::MATCH_PRIORITY_MIN;
     let mut current_match: Option<&VariablePolicyEntry> = None;
 
-    for next_policy in &self.inner {
+    for next_policy in &self.0 {
       if let Some(policy_priority) = next_policy.eval_match(variable_name_option, vendor_guid) {
         if current_match.is_none() || policy_priority < match_priority {
           current_match = Some(&next_policy);
