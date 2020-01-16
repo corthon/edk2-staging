@@ -109,7 +109,7 @@ unsafe fn char16_to_string (string_in: *const efi::Char16) -> String {
 }
 
 // Quick helper to wrap EfiGetVariable and turn Rust params into UEFI params.
-unsafe fn get_variable(variable_name: &String, vendor_guid: &efi::Guid) -> Result<(Vec<u8>, u32), efi::Status> {
+unsafe fn get_variable(variable_name: &str, vendor_guid: &efi::Guid) -> Result<(Vec<u8>, u32), efi::Status> {
   match &INITIALIZED_STATE {
     Some(lib_state) => {
       let mut variable_name_char16: Vec<u16> = variable_name.encode_utf16().collect();
@@ -707,7 +707,7 @@ impl VariablePolicyEntry {
     raw_buffer
   }
 
-  fn eval_match(&self, variable_name_option: Option<&String>, vendor_guid: &efi::Guid) -> Option<u8> {
+  fn eval_match(&self, variable_name_option: Option<&str>, vendor_guid: &efi::Guid) -> Option<u8> {
     let mut match_priority: Option<u8> = None;
 
     // If the namespaces don't match, we're done here.
@@ -776,7 +776,7 @@ impl VariablePolicyList {
     // Make sure that there are no duplicates of this policy.
     // TODO: For some stupid reason this works. Find out why and what would be better.
     let match_name = match &policy.name {
-      Some(inner_name) => Some(inner_name),
+      Some(inner_name) => Some(inner_name.as_ref()),
       None => None,
     };
     let (match_policy, match_priority) = self.get_best_match(match_name, &policy.namespace);
@@ -800,7 +800,7 @@ impl VariablePolicyList {
     output_buffer
   }
 
-  pub fn get_best_match(&self, variable_name_option: Option<&String>, vendor_guid: &efi::Guid) -> (Option<&VariablePolicyEntry>, u8) {
+  pub fn get_best_match(&self, variable_name_option: Option<&str>, vendor_guid: &efi::Guid) -> (Option<&VariablePolicyEntry>, u8) {
     let mut match_priority = VariablePolicyEntry::MATCH_PRIORITY_MIN;
     let mut current_match: Option<&VariablePolicyEntry> = None;
 
@@ -817,7 +817,7 @@ impl VariablePolicyList {
   }
 
   pub fn is_set_variable_valid(
-    &self, variable_name: &String, vendor_guid: &efi::Guid, attributes: u32, data: &[u8]
+    &self, variable_name: &str, vendor_guid: &efi::Guid, attributes: u32, data: &[u8]
     ) -> bool
   {
     // Step one: figure out if we have a policy that controls this variable.
@@ -921,7 +921,7 @@ mod tests {
 
   // Based off of code from:
   // https://github.com/teg/r-efi-string/blob/master/src/lib.rs
-  unsafe fn string_to_char16(input: &String, output: *mut u16) {
+  unsafe fn string_to_char16(input: &str, output: *mut u16) {
     let mut len: isize = 0;
     for c in input.chars() {
       match c as u32 {
@@ -1004,10 +1004,10 @@ mod tests {
       LockPolicyType::NoLock, TEST_VAR_GUID_1, Some(String::from(TEST_VAR_NAME_1))
       );
 
-    assert!(new_policy.eval_match(Some(&String::from(TEST_VAR_NAME_2)), &TEST_VAR_GUID_1).is_none());
-    assert!(new_policy.eval_match(Some(&String::from(TEST_VAR_NAME_1)), &TEST_VAR_GUID_2).is_none());
+    assert!(new_policy.eval_match(Some(&TEST_VAR_NAME_2), &TEST_VAR_GUID_1).is_none());
+    assert!(new_policy.eval_match(Some(&TEST_VAR_NAME_1), &TEST_VAR_GUID_2).is_none());
 
-    assert!(new_policy.eval_match(Some(&String::from(TEST_VAR_NAME_1)), &TEST_VAR_GUID_1).is_some());
+    assert!(new_policy.eval_match(Some(&TEST_VAR_NAME_1), &TEST_VAR_GUID_1).is_some());
   }
 
   #[test]
@@ -1024,14 +1024,14 @@ mod tests {
     let check_var_h_name = "Wildcard#VarName56";
 
     // Make sure that two different sets of wildcard numbers match.
-    assert!(new_policy.eval_match(Some(&String::from(check_var1_name)), &TEST_VAR_GUID_1).is_some());
-    assert!(new_policy.eval_match(Some(&String::from(check_var2_name)), &TEST_VAR_GUID_1).is_some());
+    assert!(new_policy.eval_match(Some(&check_var1_name), &TEST_VAR_GUID_1).is_some());
+    assert!(new_policy.eval_match(Some(&check_var2_name), &TEST_VAR_GUID_1).is_some());
 
     // Make sure that the non-number charaters don't match.
-    assert!(new_policy.eval_match(Some(&String::from(check_var_b_name)), &TEST_VAR_GUID_1).is_none());
+    assert!(new_policy.eval_match(Some(&check_var_b_name), &TEST_VAR_GUID_1).is_none());
 
     // Make sure that '#' signs don't match.
-    assert!(new_policy.eval_match(Some(&String::from(check_var_h_name)), &TEST_VAR_GUID_1).is_none());
+    assert!(new_policy.eval_match(Some(&check_var_h_name), &TEST_VAR_GUID_1).is_none());
   }
 
   #[test]
@@ -1058,11 +1058,11 @@ mod tests {
                                       "01234567890123456789012345678901234567890123456789");
 
     // Make sure that the shorter and the longer do not match.
-    assert!(new_policy.eval_match(Some(&String::from(check_shorter_string)), &TEST_VAR_GUID_1).is_none());
-    assert!(new_policy.eval_match(Some(&String::from(check_longer_string)), &TEST_VAR_GUID_1).is_none());
+    assert!(new_policy.eval_match(Some(&check_shorter_string), &TEST_VAR_GUID_1).is_none());
+    assert!(new_policy.eval_match(Some(&check_longer_string), &TEST_VAR_GUID_1).is_none());
 
     // Make sure that the valid one matches and has the expected priority.
-    let match_eval = new_policy.eval_match(Some(&String::from(check_valid_string)), &TEST_VAR_GUID_1);
+    let match_eval = new_policy.eval_match(Some(&check_valid_string), &TEST_VAR_GUID_1);
     assert_eq!(match_eval, Some(VariablePolicyEntry::MATCH_PRIORITY_MIN));
   }
 
@@ -1080,13 +1080,13 @@ mod tests {
     let check_var_h_name = "Wildcard#VarName56";
 
     // Make sure that all names in the same namespace match.
-    assert!(new_policy.eval_match(Some(&String::from(check_var1_name)), &TEST_VAR_GUID_1).is_some());
-    assert!(new_policy.eval_match(Some(&String::from(check_var2_name)), &TEST_VAR_GUID_1).is_some());
-    assert!(new_policy.eval_match(Some(&String::from(check_var_b_name)), &TEST_VAR_GUID_1).is_some());
-    assert!(new_policy.eval_match(Some(&String::from(check_var_h_name)), &TEST_VAR_GUID_1).is_some());
+    assert!(new_policy.eval_match(Some(&check_var1_name), &TEST_VAR_GUID_1).is_some());
+    assert!(new_policy.eval_match(Some(&check_var2_name), &TEST_VAR_GUID_1).is_some());
+    assert!(new_policy.eval_match(Some(&check_var_b_name), &TEST_VAR_GUID_1).is_some());
+    assert!(new_policy.eval_match(Some(&check_var_h_name), &TEST_VAR_GUID_1).is_some());
 
     // Make sure that different namespace doesn't match.
-    assert!(new_policy.eval_match(Some(&String::from(check_var1_name)), &TEST_VAR_GUID_2).is_none());
+    assert!(new_policy.eval_match(Some(&check_var1_name), &TEST_VAR_GUID_2).is_none());
   }
 
   #[test]
@@ -1128,20 +1128,20 @@ mod tests {
       );
 
     // Check with a perfect match.
-    assert_eq!(new_policy.eval_match(Some(&String::from(check_var1_name)), &TEST_VAR_GUID_1),
+    assert_eq!(new_policy.eval_match(Some(&check_var1_name), &TEST_VAR_GUID_1),
                 Some(VariablePolicyEntry::MATCH_PRIORITY_EXACT));
 
     // Check with progressively lower priority matches.
     new_policy.name = Some(String::from(match_var2_name));
-    assert_eq!(new_policy.eval_match(Some(&String::from(check_var1_name)), &TEST_VAR_GUID_1), Some(1));
+    assert_eq!(new_policy.eval_match(Some(&check_var1_name), &TEST_VAR_GUID_1), Some(1));
     new_policy.name = Some(String::from(match_var3_name));
-    assert_eq!(new_policy.eval_match(Some(&String::from(check_var1_name)), &TEST_VAR_GUID_1), Some(2));
+    assert_eq!(new_policy.eval_match(Some(&check_var1_name), &TEST_VAR_GUID_1), Some(2));
     new_policy.name = Some(String::from(match_var4_name));
-    assert_eq!(new_policy.eval_match(Some(&String::from(check_var1_name)), &TEST_VAR_GUID_1), Some(3));
+    assert_eq!(new_policy.eval_match(Some(&check_var1_name), &TEST_VAR_GUID_1), Some(3));
 
     // Check against the entire namespace.
     new_policy.name = None;
-    assert_eq!(new_policy.eval_match(Some(&String::from(check_var1_name)), &TEST_VAR_GUID_1),
+    assert_eq!(new_policy.eval_match(Some(&check_var1_name), &TEST_VAR_GUID_1),
                 Some(VariablePolicyEntry::MATCH_PRIORITY_MIN));
   }
 
@@ -1432,7 +1432,7 @@ mod tests {
       let dest_buffer = (raw_var_policy_header as *const u8)
                           .offset((*raw_var_policy_header).offset_to_name as isize)
                           as *mut u16;
-      string_to_char16(&String::from(TEST_VAR_NAME_1), dest_buffer);
+      string_to_char16(&TEST_VAR_NAME_1, dest_buffer);
     }
     assert!(VariablePolicyEntry::from_raw(raw_var_policy_header as *const RawVariablePolicyEntry).is_err());
 
@@ -1455,7 +1455,7 @@ mod tests {
       let dest_buffer = (raw_var_policy_header as *const u8)
                           .offset((*raw_var_policy_header).offset_to_name as isize)
                           as *mut u16;
-      string_to_char16(&String::from(TEST_VAR_NAME_1), dest_buffer);
+      string_to_char16(&TEST_VAR_NAME_1, dest_buffer);
     }
     assert!(VariablePolicyEntry::from_raw(raw_var_policy_header as *const RawVariablePolicyEntry).is_err());
   }
@@ -1612,7 +1612,7 @@ mod tests {
 
     // Without a policy, there should be no constraints on variable creation.
     assert!(policy_list.is_set_variable_valid(
-      &String::from(TEST_VAR_NAME_1), &TEST_VAR_GUID_1,
+      &TEST_VAR_NAME_1, &TEST_VAR_GUID_1,
       r_efi::system::VARIABLE_NON_VOLATILE | r_efi::system::VARIABLE_BOOTSERVICE_ACCESS,
       &[ 0xAA; (TEST_POLICY_MAX_SIZE_200 + 1) as usize ]
       ));
@@ -1622,21 +1622,21 @@ mod tests {
 
     // With a policy, make sure that sizes outsize the target range fail.
     assert!(!policy_list.is_set_variable_valid(
-      &String::from(TEST_VAR_NAME_1), &TEST_VAR_GUID_1,
+      &TEST_VAR_NAME_1, &TEST_VAR_GUID_1,
       r_efi::system::VARIABLE_NON_VOLATILE | r_efi::system::VARIABLE_BOOTSERVICE_ACCESS,
       &[ 0xAA; (TEST_POLICY_MAX_SIZE_200 + 1) as usize ]
       ));
 
     // With a policy, make sure that sizes outsize the target range fail.
     assert!(!policy_list.is_set_variable_valid(
-      &String::from(TEST_VAR_NAME_1), &TEST_VAR_GUID_1,
+      &TEST_VAR_NAME_1, &TEST_VAR_GUID_1,
       r_efi::system::VARIABLE_NON_VOLATILE | r_efi::system::VARIABLE_BOOTSERVICE_ACCESS,
       &[ 0xAA; (TEST_POLICY_MIN_SIZE_10 - 1) as usize ]
       ));
 
     // With a policy, make sure a valid variable is still valid.
     assert!(policy_list.is_set_variable_valid(
-      &String::from(TEST_VAR_NAME_1), &TEST_VAR_GUID_1,
+      &TEST_VAR_NAME_1, &TEST_VAR_GUID_1,
       r_efi::system::VARIABLE_NON_VOLATILE | r_efi::system::VARIABLE_BOOTSERVICE_ACCESS,
       &[ 0xAA; (TEST_POLICY_MIN_SIZE_10 + 1) as usize ]
       ));
