@@ -771,12 +771,11 @@ impl VariablePolicyList {
 
   pub fn add_policy(&mut self, policy: VariablePolicyEntry) -> bool {
     // Make sure that there are no duplicates of this policy.
-    // TODO: For some stupid reason this works. Find out why and what would be better.
-    let match_name = match &policy.name {
-      Some(inner_name) => Some(inner_name.as_ref()),
-      None => None,
-    };
-    let (match_policy, match_priority) = self.get_best_match(match_name, &policy.namespace);
+    let (match_policy, match_priority) = self.get_best_match(
+      // Option<String> -> Option<&String> -> Option<&str>
+      policy.name.as_ref().map(|ii| ii.as_ref()),
+      &policy.namespace
+    );
 
     // If there was a match and the match_priority is exact, we have a duplicate.
     if match_policy.is_some() && match_priority == VariablePolicyEntry::MATCH_PRIORITY_EXACT {
