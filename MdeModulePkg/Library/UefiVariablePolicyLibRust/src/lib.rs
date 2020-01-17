@@ -79,11 +79,11 @@ static ALLOCATOR: MyAllocator = MyAllocator;
 // This section is the UEFI-facing library interface.
 // All transition to Rust (with the exception of VariablePolicyEntry::from_raw()) should be here.
 //
-type EfiGetVariable = extern fn(_: *const efi::Char16,
-                                _: *const efi::Guid,
-                                _: *mut u32,
-                                _: *mut usize,
-                                _: *mut u8) -> efi::Status;
+type EfiGetVariable = extern "C" fn(_: *const efi::Char16,
+                                    _: *const efi::Guid,
+                                    _: *mut u32,
+                                    _: *mut usize,
+                                    _: *mut u8) -> efi::Status;
 
 struct LibState {
   policy_list: VariablePolicyList,
