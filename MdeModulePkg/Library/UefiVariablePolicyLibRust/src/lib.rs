@@ -125,7 +125,7 @@ unsafe fn get_variable(variable_name: &str, vendor_guid: &efi::Guid) -> Result<(
         vendor_guid as *const efi::Guid,
         &mut attributes as *mut u32,
         &mut data_size as *mut usize,
-        0 as *mut u8
+        core::ptr::null_mut()
         );
 
       // If and only if the error is BUFFER_TOO_SMALL, try allocating
@@ -165,9 +165,10 @@ pub extern fn register_variable_policy(policy_data: *const RawVariablePolicyEntr
       // First, we need to turn the raw data into an entry.
       match VariablePolicyEntry::from_raw(policy_data) {
         Ok(new_policy) => {
-          match lib_state.policy_list.add_policy(new_policy) {
-            true => efi::Status::SUCCESS,
-            false => efi::Status::ALREADY_STARTED
+          if lib_state.policy_list.add_policy(new_policy) {
+            efi::Status::SUCCESS
+          } else {
+            efi::Status::ALREADY_STARTED
           }
         }
         Err(err_status) => err_status
@@ -322,9 +323,9 @@ pub extern fn init_variable_policy_lib (
     None => {
       let new_state = Some(LibState {
         policy_list: VariablePolicyList::new(),
-        get_variable_helper: get_variable_helper,
         interface_locked: false,
         protection_disabled: false,
+        get_variable_helper,
       });
       unsafe { INITIALIZED_STATE = new_state; }
 
@@ -587,10 +588,8 @@ impl VariablePolicyEntry {
       // TODO: Find a better way to do this.
       if let LockPolicyType::LockOnVarState(_) = new_policy.lock_policy_type {
       }
-      else {
-        if (*raw_var_policy_header).offset_to_name != RAW_VARIABLE_POLICY_ENTRY_SIZE as u16 {
+      else if (*raw_var_policy_header).offset_to_name != RAW_VARIABLE_POLICY_ENTRY_SIZE as u16 {
           return Err(efi::Status::INVALID_PARAMETER);
-        }
       }
 
       // Check to make sure that the name has a terminating character
@@ -767,7 +766,7 @@ impl VariablePolicyEntry {
 
 impl VariablePolicyList {
   pub fn new() -> Self {
-    VariablePolicyList( Vec::new() )
+    Self( Vec::new() )
   }
 
   pub fn add_policy(&mut self, policy: VariablePolicyEntry) -> bool {
