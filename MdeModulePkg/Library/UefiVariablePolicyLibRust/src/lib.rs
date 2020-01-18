@@ -45,6 +45,7 @@ fn panic(_info: &PanicInfo) -> ! {
 
 #[cfg(not(test))]
 #[alloc_error_handler]
+#[allow(clippy::empty_loop)]
 fn alloc_error_handler(layout: core::alloc::Layout) -> !
 {
     loop {}
@@ -178,9 +179,13 @@ pub extern fn register_variable_policy(policy_data: *const RawVariablePolicyEntr
   }
 }
 
+/// # Safety
+///
+/// This function will dereference pointers that are passed into it.
+/// Should only be called by internal functions.
 #[no_mangle]
 #[export_name = "ValidateSetVariable"]
-pub extern fn validate_set_variable (
+pub unsafe extern fn validate_set_variable (
     variable_name: *const efi::Char16,
     vendor_guid: *const efi::Guid,
     attributes: u32,
@@ -200,9 +205,10 @@ pub extern fn validate_set_variable (
 
       // Call policy_list.is_set_variable_valid().
       let is_valid = lib_state.policy_list.is_set_variable_valid(&my_variable_name, &my_vendor_guid, attributes, my_data);
-      match is_valid {
-        true => efi::Status::SUCCESS,
-        false => efi::Status::INVALID_PARAMETER
+      if is_valid {
+        efi::Status::SUCCESS
+      } else {
+        efi::Status::INVALID_PARAMETER
       }
     },
     None => efi::Status::NOT_READY
@@ -227,9 +233,13 @@ pub extern fn disable_variable_policy (
   }
 }
 
+/// # Safety
+///
+/// This function will dereference pointers that are passed into it.
+/// Should only be called by internal functions.
 #[no_mangle]
 #[export_name = "DumpVariablePolicy"]
-pub extern fn dump_variable_policy (
+pub unsafe extern fn dump_variable_policy (
     policy: *mut u8,
     size: *mut u32
     ) -> efi::Status {
@@ -251,8 +261,8 @@ pub extern fn dump_variable_policy (
           efi::Status::BUFFER_TOO_SMALL
         }
         else {
-          for index in 0..policy_buffer.len() {
-            *(policy.offset(index as isize)) = policy_buffer[index];
+          for (byte_index, byte_data) in policy_buffer.iter().enumerate() {
+            *(policy.add(byte_index)) = *byte_data;
           }
           *size = policy_buffer.len() as u32;
           efi::Status::SUCCESS
@@ -285,12 +295,11 @@ pub extern fn lock_variable_policy (
 
   match state {
     Some(lib_state) => {
-      match lib_state.interface_locked {
-        true => efi::Status::WRITE_PROTECTED,
-        false => {
-          lib_state.interface_locked = true;
-          efi::Status::SUCCESS
-        }
+      if lib_state.interface_locked {
+        efi::Status::WRITE_PROTECTED
+      } else {
+        lib_state.interface_locked = true;
+        efi::Status::SUCCESS
       }
     },
     None => efi::Status::NOT_READY
@@ -476,17 +485,14 @@ impl VariablePolicyEntry {
       attr_cant_have,
       lock_policy_type,
       namespace,
-      name: match name {
-        Some(name_string) => Some(String::from(name_string)),
-        None => None
-      }
+      name
     }
   }
 
   pub fn is_valid(&self) -> bool {
     // If the lock type is StateVar, string must not be empty.
     if let LockPolicyType::LockOnVarState(var_state) = &self.lock_policy_type {
-      if var_state.name.len() < 1 {
+      if var_state.name.is_empty() {
         return false;
       }
     }
@@ -500,9 +506,9 @@ impl VariablePolicyEntry {
     // If a var_name is provided, validate it.
     if let Some(var_name) = &self.name {
       // Make sure the string is at least one character.
-      if var_name.len() < 1 ||
+      if var_name.is_empty() ||
           // Make sure there aren't too many wildcards.
-          var_name.matches("#").count() > Self::MATCH_PRIORITY_MIN as usize {
+          var_name.matches('#').count() > Self::MATCH_PRIORITY_MIN as usize {
         return false;
       }
       // TODO: Make sure that all characters are valid for a var name.
@@ -682,7 +688,7 @@ impl VariablePolicyEntry {
           *(var_state_name_ptr.offset(index as isize)) = char;
         }
         // Set the terminating NULL.
-        *(var_state_name_ptr.offset(var_state.name.len() as isize)) = 0x0000;
+        *(var_state_name_ptr.add(var_state.name.len())) = 0x0000;
       }
 
       // Now update the name string, if provided.
@@ -690,11 +696,11 @@ impl VariablePolicyEntry {
       if let Some(var_name) = &self.name {
         let var_name_ptr = raw_buffer_ptr.offset(name_offset as isize) as *mut u16;
         let mut char16_iter = var_name.encode_utf16().enumerate();
-        while let Some((index, char)) = char16_iter.next() {
-          *(var_name_ptr.offset(index as isize)) = char;
+        while let Some((index, write_char)) = char16_iter.next() {
+          var_name_ptr.add(index).write_unaligned(write_char);
         }
         // Set the terminating NULL.
-        *(var_name_ptr.offset(var_name.len() as isize)) = 0x0000;
+        var_name_ptr.add(var_name.len()).write_unaligned(0x0000);
       }
 
       // Finally, update the contents of the Vector.
