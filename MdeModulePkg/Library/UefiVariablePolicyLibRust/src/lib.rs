@@ -558,14 +558,14 @@ impl VariablePolicyEntry {
         RawLockPolicyType::LOCK_ON_CREATE => LockPolicyType::LockOnCreate,
         RawLockPolicyType::LOCK_ON_VAR_STATE => {
           let raw_var_state_header = data_buffer
-                                        .offset(RAW_VARIABLE_POLICY_ENTRY_SIZE as isize)
+                                        .add(RAW_VARIABLE_POLICY_ENTRY_SIZE)
                                         as *const RawVarStateLock;
 
           // If the policy type is VARIABLE_POLICY_TYPE_LOCK_ON_VAR_STATE, make sure that the matching state variable Name
           // terminates before the OffsetToName for the matching policy variable Name.
           let mut string_len: isize   = 0;
           let state_name_string = (raw_var_state_header as *const u8)
-                                    .offset((RAW_VAR_STATE_LOCK_SIZE) as isize)
+                                    .add(RAW_VAR_STATE_LOCK_SIZE)
                                     as *const u16;
           while *(state_name_string.offset(string_len)) != 0 {
             if entry_end <= state_name_string.offset(string_len) as usize {
@@ -673,7 +673,7 @@ impl VariablePolicyEntry {
 
       // Now update the VarStateLock, if set.
       if let LockPolicyType::LockOnVarState(var_state) = &self.lock_policy_type {
-        let var_state_lock_header = raw_buffer_ptr.offset(RAW_VARIABLE_POLICY_ENTRY_SIZE as isize) as *mut RawVarStateLock;
+        let var_state_lock_header = raw_buffer_ptr.add(RAW_VARIABLE_POLICY_ENTRY_SIZE) as *mut RawVarStateLock;
         (*var_state_lock_header).namespace = var_state.namespace;
         (*var_state_lock_header).value = var_state.value;
         (*var_state_lock_header).padding = 0;
@@ -681,11 +681,11 @@ impl VariablePolicyEntry {
         // Need to copy the var_state string to the correct offset.
         // TODO: Make sure this section behaves correctly for possible double chars.
         let var_state_name_ptr = (var_state_lock_header as *mut u8)
-                                    .offset(RAW_VAR_STATE_LOCK_SIZE as isize)
+                                    .add(RAW_VAR_STATE_LOCK_SIZE)
                                     as *mut u16;
         let mut char16_iter = var_state.name.encode_utf16().enumerate();
-        while let Some((index, char)) = char16_iter.next() {
-          *(var_state_name_ptr.offset(index as isize)) = char;
+        for (index, write_char) in char16_iter {
+          *(var_state_name_ptr.add(index)) = write_char;
         }
         // Set the terminating NULL.
         *(var_state_name_ptr.add(var_state.name.len())) = 0x0000;
@@ -694,9 +694,9 @@ impl VariablePolicyEntry {
       // Now update the name string, if provided.
       // TODO: Make sure this section behaves correctly for possible double chars.
       if let Some(var_name) = &self.name {
-        let var_name_ptr = raw_buffer_ptr.offset(name_offset as isize) as *mut u16;
+        let var_name_ptr = raw_buffer_ptr.add(name_offset) as *mut u16;
         let mut char16_iter = var_name.encode_utf16().enumerate();
-        while let Some((index, write_char)) = char16_iter.next() {
+        for (index, write_char) in char16_iter {
           var_name_ptr.add(index).write_unaligned(write_char);
         }
         // Set the terminating NULL.
@@ -721,9 +721,10 @@ impl VariablePolicyEntry {
     // If the variable_name_option is None, there are only two options...
     // Either it's a perfect match agains a namespace-wildcard policy, or it's a complete failure.
     if variable_name_option.is_none() {
-      match self.name.is_none() {
-        true => return Some(Self::MATCH_PRIORITY_EXACT),
-        false => return None,
+      if self.name.is_none() {
+        return Some(Self::MATCH_PRIORITY_EXACT);
+      } else {
+        return None;
       }
     }
 
@@ -827,12 +828,8 @@ impl VariablePolicyList {
 
     // Determine whether this is a delete operation.
     // If so, it will affect which tests are applied.
-    let is_del = if data.len() == 0 && (attributes & r_efi::system::VARIABLE_APPEND_WRITE) == 0 {
-      true
-    }
-    else {
-      false
-    };
+    let is_del = data.is_empty() &&
+                  (attributes & r_efi::system::VARIABLE_APPEND_WRITE) == 0;
 
     // Only matters if we have a matching policy.
     // If we have an active policy, check it against the incoming data.
