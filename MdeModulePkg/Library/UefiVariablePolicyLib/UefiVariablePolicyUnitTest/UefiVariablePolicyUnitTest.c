@@ -162,18 +162,16 @@ StubGetVariableNull (
 STATIC
 UNIT_TEST_STATUS
 LibInitMocked (
-  UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
-  return EFI_ERROR(InitVariablePolicyLib( StubGetVariableNull )) ? UNIT_TEST_ERROR_PREREQ_NOT_MET : UNIT_TEST_PASSED;
+  return EFI_ERROR(InitVariablePolicyLib( StubGetVariableNull )) ? UNIT_TEST_ERROR_PREREQUISITE_NOT_MET : UNIT_TEST_PASSED;
 }
 
 STATIC
 VOID
 LibCleanup (
-  UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   DeinitVariablePolicyLib();
@@ -187,8 +185,7 @@ LibCleanup (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToInitAndDeinitTheLibrary (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EFI_STATUS    Status;
@@ -208,8 +205,7 @@ ShouldBeAbleToInitAndDeinitTheLibrary (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldNotBeAbleToInitializeTheLibraryTwice (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EFI_STATUS    Status;
@@ -223,8 +219,7 @@ ShouldNotBeAbleToInitializeTheLibraryTwice (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldFailDeinitWithoutInit (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EFI_STATUS    Status;
@@ -236,8 +231,7 @@ ShouldFailDeinitWithoutInit (
 UNIT_TEST_STATUS
 EFIAPI
 ApiCommandsShouldNotRespondIfLibIsUninitialized (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -291,8 +285,7 @@ EvaluatePolicyMatch (
 UNIT_TEST_STATUS
 EFIAPI
 PoliciesShouldMatchByNameAndGuid (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -327,8 +320,7 @@ PoliciesShouldMatchByNameAndGuid (
 UNIT_TEST_STATUS
 EFIAPI
 WildcardPoliciesShouldMatchDigits (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -366,8 +358,7 @@ WildcardPoliciesShouldMatchDigits (
 UNIT_TEST_STATUS
 EFIAPI
 WildcardPoliciesShouldMatchDigitsAdvanced (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -414,8 +405,7 @@ WildcardPoliciesShouldMatchDigitsAdvanced (
 UNIT_TEST_STATUS
 EFIAPI
 WildcardPoliciesShouldMatchNamespaces (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -450,8 +440,7 @@ WildcardPoliciesShouldMatchNamespaces (
 UNIT_TEST_STATUS
 EFIAPI
 MatchPrioritiesShouldFollowRules (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   MatchCheckPolicy = {
@@ -507,8 +496,7 @@ MatchPrioritiesShouldFollowRules (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldAllowNamespaceWildcards (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -534,8 +522,7 @@ RegisterShouldAllowNamespaceWildcards (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldAllowStateVarsForNamespaces (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -568,8 +555,7 @@ RegisterShouldAllowStateVarsForNamespaces (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectNullPointers (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   UT_ASSERT_EQUAL( RegisterVariablePolicy( NULL ), EFI_INVALID_PARAMETER );
@@ -579,8 +565,7 @@ RegisterShouldRejectNullPointers (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadRevisions (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -607,8 +592,7 @@ RegisterShouldRejectBadRevisions (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadSizes (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -635,8 +619,7 @@ RegisterShouldRejectBadSizes (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadOffsets (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -683,8 +666,7 @@ RegisterShouldRejectBadOffsets (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectMissingStateStrings (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -724,8 +706,7 @@ RegisterShouldRejectMissingStateStrings (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectStringsMissingNull (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -766,8 +747,7 @@ RegisterShouldRejectStringsMissingNull (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectMalformedStrings (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -808,8 +788,7 @@ RegisterShouldRejectMalformedStrings (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectUnpackedPolicies (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -854,8 +833,7 @@ RegisterShouldRejectUnpackedPolicies (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectInvalidNameCharacters (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   // EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -889,8 +867,7 @@ RegisterShouldRejectInvalidNameCharacters (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectBadPolicyConstraints (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -918,8 +895,7 @@ RegisterShouldRejectBadPolicyConstraints (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectUnknownLockPolicies (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -948,8 +924,7 @@ RegisterShouldRejectUnknownLockPolicies (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectPolicesWithTooManyWildcards (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -977,8 +952,7 @@ RegisterShouldRejectPolicesWithTooManyWildcards (
 UNIT_TEST_STATUS
 EFIAPI
 RegisterShouldRejectDuplicatePolicies (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1005,8 +979,7 @@ RegisterShouldRejectDuplicatePolicies (
 UNIT_TEST_STATUS
 EFIAPI
 MinAndMaxSizePoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1068,8 +1041,7 @@ MinAndMaxSizePoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 AttributeMustPoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1139,8 +1111,7 @@ AttributeMustPoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 AttributeCantPoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1202,8 +1173,7 @@ AttributeCantPoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 VariablesShouldBeDeletableRegardlessOfSize (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1248,8 +1218,7 @@ VariablesShouldBeDeletableRegardlessOfSize (
 UNIT_TEST_STATUS
 EFIAPI
 LockNowPoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1295,8 +1264,7 @@ LockNowPoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 LockOnCreatePoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1365,8 +1333,7 @@ LockOnCreatePoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 LockOnStatePoliciesShouldBeHonored (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1482,8 +1449,7 @@ LockOnStatePoliciesShouldBeHonored (
 UNIT_TEST_STATUS
 EFIAPI
 LockOnStatePoliciesShouldApplyToNamespaces (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1587,8 +1553,7 @@ LockOnStatePoliciesShouldApplyToNamespaces (
 UNIT_TEST_STATUS
 EFIAPI
 LockOnStateShouldHandleErrorsGracefully (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   EXPANDED_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1685,8 +1650,7 @@ LockOnStateShouldHandleErrorsGracefully (
 UNIT_TEST_STATUS
 EFIAPI
 BestMatchPriorityShouldBeObeyed (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   ValidationPolicy = {
@@ -1824,8 +1788,7 @@ BestMatchPriorityShouldBeObeyed (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToLockInterface (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -1861,8 +1824,7 @@ ShouldBeAbleToLockInterface (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToDisablePolicyEnforcement (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -1905,8 +1867,7 @@ ShouldBeAbleToDisablePolicyEnforcement (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldNotBeAbleToDisablePoliciesTwice (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   // Make sure that the policy enforcement is currently enabled.
@@ -1924,8 +1885,7 @@ ShouldNotBeAbleToDisablePoliciesTwice (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToAddNewPoliciesAfterDisabled (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -1959,8 +1919,7 @@ ShouldBeAbleToAddNewPoliciesAfterDisabled (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToLockAfterDisabled (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   // Make sure that the policy enforcement is currently enabled.
@@ -1979,8 +1938,7 @@ ShouldBeAbleToLockAfterDisabled (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToDumpThePolicyTable (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
@@ -2043,8 +2001,7 @@ ShouldBeAbleToDumpThePolicyTable (
 UNIT_TEST_STATUS
 EFIAPI
 ShouldBeAbleToDumpThePolicyTableAfterDisabled (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UNIT_TEST_CONTEXT           Context
+  IN UNIT_TEST_CONTEXT      Context
   )
 {
   SIMPLE_VARIABLE_POLICY_ENTRY   TestPolicy = {
