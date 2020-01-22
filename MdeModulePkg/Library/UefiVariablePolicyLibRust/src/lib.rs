@@ -858,18 +858,13 @@ impl VariablePolicyList {
         // Otherwise, can go ahead and return an error.
         LockPolicyType::LockOnCreate => {
           match unsafe { get_variable(variable_name, vendor_guid) } {
-            Ok(_) => return false,
-            Err(err_status) => {
-              match err_status {
-                efi::Status::NOT_FOUND => (),
-                _ => return false
-              }
-            }
+            Err(efi::Status::NOT_FOUND) => (),
+            _ => return false,
           }
         },
         LockPolicyType::LockOnVarState(var_state) => {
           match unsafe { get_variable(&var_state.name, &var_state.namespace) } {
-            Ok((var_data, var_attr)) => {
+            Ok((var_data, _)) => {
               if var_data.len() == 1 && var_data[0] == var_state.value {
                 return false;
               }
@@ -884,6 +879,7 @@ impl VariablePolicyList {
       }
     }
 
+    // If we haven't blown up by now, we're good.
     true
   }
 }
