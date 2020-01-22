@@ -1,10 +1,8 @@
 /** @file
-
   Implement UnitTestResultReportLib doing plain txt out to console
 
   Copyright (c) Microsoft Corporation.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
-
 **/
 
 #include <Uefi.h>
@@ -34,12 +32,12 @@ struct _UNIT_TEST_FAILURE_TYPE_STRING {
 };
 
 struct _UNIT_TEST_STATUS_STRING  mStatusStrings[] = {
-  { UNIT_TEST_PASSED,               "PASSED"},
-  { UNIT_TEST_ERROR_PREREQ_NOT_MET, "NOT RUN - PREREQ FAILED"},
-  { UNIT_TEST_ERROR_TEST_FAILED,    "FAILED"},
-  { UNIT_TEST_RUNNING,              "RUNNING"},
-  { UNIT_TEST_PENDING,              "PENDING"},
-  { 0,                              "**UNKNOWN**"}
+  { UNIT_TEST_PASSED,                     "PASSED"},
+  { UNIT_TEST_ERROR_PREREQUISITE_NOT_MET, "NOT RUN - PREREQUISITE FAILED"},
+  { UNIT_TEST_ERROR_TEST_FAILED,          "FAILED"},
+  { UNIT_TEST_RUNNING,                    "RUNNING"},
+  { UNIT_TEST_PENDING,                    "PENDING"},
+  { 0,                                    "**UNKNOWN**"}
 };
 
 struct _UNIT_TEST_FAILURE_TYPE_STRING mFailureTypeStrings[] = {
@@ -155,7 +153,7 @@ OutputUnitTestFrameworkReport (
 
     ReportPrint ("/////////////////////////////////////////////////////////\n");
     ReportPrint ("  SUITE: %a\n", Suite->UTS.Title);
-    ReportPrint ("   PACKAGE: %a\n", Suite->UTS.Package);
+    ReportPrint ("   PACKAGE: %a\n", Suite->UTS.Name);
     ReportPrint ("/////////////////////////////////////////////////////////\n");
 
     //
@@ -166,7 +164,7 @@ OutputUnitTestFrameworkReport (
       Test = (UNIT_TEST_LIST_ENTRY*)GetNextNode(&(Suite->UTS.TestCaseList), (LIST_ENTRY*)Test)) {
 
       ReportPrint ("*********************************************************\n");
-      ReportPrint ("  CLASS NAME: %a\n", Test->UT.ClassName);
+      ReportPrint ("  CLASS NAME: %a\n", Test->UT.Name);
       ReportPrint ("  TEST:    %a\n", Test->UT.Description);
       ReportPrint ("  STATUS:  %a\n", GetStringForUnitTestStatus (Test->UT.Result));
       ReportPrint ("  FAILURE: %a\n", GetStringForFailureType (Test->UT.FailureType));
@@ -179,14 +177,14 @@ OutputUnitTestFrameworkReport (
 
       switch (Test->UT.Result) {
       case UNIT_TEST_PASSED:
-        SPassed++; 
+        SPassed++;
         break;
       case UNIT_TEST_ERROR_TEST_FAILED:
         SFailed++;
         break;
       case UNIT_TEST_PENDING:               // Fall through...
       case UNIT_TEST_RUNNING:               // Fall through...
-      case UNIT_TEST_ERROR_PREREQ_NOT_MET:
+      case UNIT_TEST_ERROR_PREREQUISITE_NOT_MET:
         SNotRun++;
         break;
       default:
@@ -204,7 +202,7 @@ OutputUnitTestFrameworkReport (
 
     Passed += SPassed;  //add to global counters
     Failed += SFailed;  //add to global counters
-    NotRun += SNotRun;  //add to global coutners
+    NotRun += SNotRun;  //add to global counters
   }//End Suite iteration
 
   ReportPrint ("=========================================================\n");

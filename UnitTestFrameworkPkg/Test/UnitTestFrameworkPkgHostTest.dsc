@@ -1,4 +1,5 @@
 ## @file
+# UnitTestFrameworkPkg DSC file used to build host-based unit tests.
 #
 # Copyright (c) Microsoft Corporation.<BR>
 # SPDX-License-Identifier: BSD-2-Clause-Patent
@@ -22,3 +23,11 @@
   # Build HOST_APPLICATION that tests the SampleUnitTest
   #
   UnitTestFrameworkPkg/Test/UnitTest/Sample/SampleUnitTest/SampleUnitTestHost.inf
+
+  #
+  # Build Libraries
+  #
+  UnitTestFrameworkPkg/Library/CmockaLib/CmockaLib.inf
+  UnitTestFrameworkPkg/Library/Posix/DebugLibPosix/DebugLibPosix.inf
+  UnitTestFrameworkPkg/Library/Posix/MemoryAllocationLibPosix/MemoryAllocationLibPosix.inf
+  UnitTestFrameworkPkg/Library/UnitTestLib/UnitTestLibCmocka.inf

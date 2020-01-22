@@ -5,7 +5,7 @@
   platform customization will make porting to new code base/platform easier.
 
   Copyright (c) Microsoft Corporation.<BR>
-  Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2019 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
@@ -20,7 +20,7 @@
   @retval EFI_SUCCESS      Boot device for next boot was set.
   @retval EFI_UNSUPPORTED  Setting the boot device for the next boot is not
                            supportted.
-  @retval Other            Boot devide for next boot can not be set.
+  @retval Other            Boot device for next boot can not be set.
 **/
 EFI_STATUS
 EFIAPI

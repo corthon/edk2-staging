@@ -43,10 +43,7 @@
     },
     ## options defined ci/Plugin/HostUnitTestDscCompleteCheck
     "HostUnitTestDscCompleteCheck": {
-        "IgnoreInf": [
-            # Ignore the Rust version for now.
-            "MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf"
-        ],
+        "IgnoreInf": [""],
         "DscPath": "Test/MdeModulePkgHostTest.dsc"
     },
 

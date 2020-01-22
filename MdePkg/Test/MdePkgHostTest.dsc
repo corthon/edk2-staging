@@ -1,6 +1,8 @@
 ## @file
+# MdePkg DSC file used to build host-based unit tests.
 #
-# Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+# Copyright (c) 2019 - 2020, Intel Corporation. All rights reserved.<BR>
+# Copyright (C) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
@@ -25,3 +27,4 @@
   # Build HOST_APPLICATION that tests the SafeIntLib
   #
   MdePkg/Test/UnitTest/Library/BaseSafeIntLib/TestBaseSafeIntLibHost.inf
+  MdePkg/Test/UnitTest/Library/BaseLib/BaseLibUnitTestsHost.inf

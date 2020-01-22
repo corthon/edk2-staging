@@ -1,13 +1,15 @@
 ## @file
+# MdeModulePkg DSC file used to build host-based unit tests.
 #
-# Copyright (c) Microsoft Corporation.
+# Copyright (c) 2019 - 2020, Intel Corporation. All rights reserved.<BR>
+# Copyright (C) Microsoft Corporation.
 # SPDX-License-Identifier: BSD-2-Clause-Patent
 #
 ##
 
 [Defines]
   PLATFORM_NAME           = MdeModulePkgHostTest
-  PLATFORM_GUID           = ED1BC320-D0CD-4CEC-8B42-454FBB7999BC
+  PLATFORM_GUID           = F74AF7C6-698C-4EBA-BA49-FF6816916354
   PLATFORM_VERSION        = 0.1
   DSC_SPECIFICATION       = 0x00010005
   OUTPUT_DIRECTORY        = Build/MdeModulePkg/HostTest
@@ -21,6 +23,8 @@
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
 
 [Components]
+  MdeModulePkg/Library/DxeResetSystemLib/UnitTest/MockUefiRuntimeServicesTableLib.inf
+
   #
   # Build any test HOST_APPLICATIONs
   #
@@ -31,4 +35,10 @@
   MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyUnitTest/UefiVariablePolicyUnitTest.inf {
     <LibraryClasses>
       UefiVariablePolicyLib|MdeModulePkg/Library/UefiVariablePolicyLibRust/UefiVariablePolicyLib.inf
+  }
+
+  MdeModulePkg/Library/DxeResetSystemLib/UnitTest/DxeResetSystemLibUnitTestHost.inf {
+    <LibraryClasses>
+      ResetSystemLib|MdeModulePkg/Library/DxeResetSystemLib/DxeResetSystemLib.inf
+      UefiRuntimeServicesTableLib|MdeModulePkg/Library/DxeResetSystemLib/UnitTest/MockUefiRuntimeServicesTableLib.inf
   }

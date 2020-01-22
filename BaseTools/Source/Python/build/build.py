@@ -26,7 +26,7 @@ from threading import Thread,Event,BoundedSemaphore
 import threading
 from subprocess import Popen,PIPE, STDOUT
 from collections import OrderedDict, defaultdict
-from Common.buildoptions import BuildOption,BuildTarget
+
 from AutoGen.PlatformAutoGen import PlatformAutoGen
 from AutoGen.ModuleAutoGen import ModuleAutoGen
 from AutoGen.RustModuleAutoGen import RustModuleAutoGen
@@ -36,8 +36,9 @@ from AutoGen.AutoGenWorker import AutoGenWorkerInProcess,AutoGenManager,\
 from AutoGen import GenMake
 from Common import Misc as Utils
 
-from Common.TargetTxtClassObject import TargetTxt
-from Common.ToolDefClassObject import ToolDef
+from Common.TargetTxtClassObject import TargetTxtDict
+from Common.ToolDefClassObject import ToolDefDict
+from buildoptions import MyOptionParser
 from Common.Misc import PathClass,SaveFileOnChange,RemoveDirectory
 from Common.StringUtils import NormPath
 from Common.MultipleWorkspace import MultipleWorkspace as mws
@@ -757,11 +758,13 @@ class Build():
         self.ConfDirectory = BuildOptions.ConfDirectory
         self.SpawnMode      = True
         self.BuildReport    = BuildReport(BuildOptions.ReportFile, BuildOptions.ReportType)
-        self.TargetTxt      = TargetTxt
-        self.ToolDef        = ToolDef
         self.AutoGenTime    = 0
         self.MakeTime       = 0
         self.GenFdsTime     = 0
+        TargetObj = TargetTxtDict()
+        ToolDefObj = ToolDefDict((os.path.join(os.getenv("WORKSPACE"),"Conf")))
+        self.TargetTxt = TargetObj.Target
+        self.ToolDef = ToolDefObj.ToolDef
         GlobalData.BuildOptionPcd     = BuildOptions.OptionPcd if BuildOptions.OptionPcd else []
         #Set global flag for build mode
         GlobalData.gIgnoreSource = BuildOptions.IgnoreSources
@@ -842,8 +845,10 @@ class Build():
             EdkLogger.quiet("%-16s = %s" % ("POSTBUILD", self.Postbuild))
         if self.Prebuild:
             self.LaunchPrebuild()
-            self.TargetTxt = TargetTxt
-            self.ToolDef   = ToolDef
+            TargetObj = TargetTxtDict()
+            ToolDefObj = ToolDefDict((os.path.join(os.getenv("WORKSPACE"), "Conf")))
+            self.TargetTxt = TargetObj.Target
+            self.ToolDef = ToolDefObj.ToolDef
         if not (self.LaunchPrebuildFlag and os.path.exists(self.PlatformBuildPath)):
             self.InitBuild()
 
@@ -2492,9 +2497,15 @@ def LogBuildTime(Time):
     else:
         return None
 def ThreadNum():
+    OptionParser = MyOptionParser()
+    if not OptionParser.BuildOption and not OptionParser.BuildTarget:
+        OptionParser.GetOption()
+    BuildOption, BuildTarget = OptionParser.BuildOption, OptionParser.BuildTarget
     ThreadNumber = BuildOption.ThreadNumber
+    GlobalData.gCmdConfDir = BuildOption.ConfDirectory
     if ThreadNumber is None:
-        ThreadNumber = TargetTxt.TargetTxtDictionary[TAB_TAT_DEFINES_MAX_CONCURRENT_THREAD_NUMBER]
+        TargetObj = TargetTxtDict()
+        ThreadNumber = TargetObj.Target.TargetTxtDictionary[TAB_TAT_DEFINES_MAX_CONCURRENT_THREAD_NUMBER]
         if ThreadNumber == '':
             ThreadNumber = 0
         else:
@@ -2529,7 +2540,10 @@ def Main():
     #
     # Parse the options and args
     #
-    Option, Target = BuildOption, BuildTarget
+    OptionParser = MyOptionParser()
+    if not OptionParser.BuildOption and not OptionParser.BuildTarget:
+        OptionParser.GetOption()
+    Option, Target = OptionParser.BuildOption, OptionParser.BuildTarget
     GlobalData.gOptions = Option
     GlobalData.gCaseInsensitive = Option.CaseInsensitive
 

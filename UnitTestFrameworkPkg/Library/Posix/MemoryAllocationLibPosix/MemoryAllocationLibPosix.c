@@ -3,9 +3,8 @@
 
   Uses POSIX APIs malloc() and free() to allocate and free memory.
 
-  Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2018 - 2020, Intel Corporation. All rights reserved.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
-
 **/
 
 #include <stdlib.h>
@@ -24,7 +23,7 @@
 ///
 /// Structure placed immediately before an aligned allocation to store the
 /// information required to free the entire buffer allocated to support then
-/// aligned alocation.
+/// aligned allocation.
 ///
 typedef struct {
   UINT32  Signature;
@@ -537,6 +536,9 @@ ReallocatePool (
   NewBuffer = malloc (NewSize);
   if (NewBuffer != NULL && OldBuffer != NULL) {
     memcpy (NewBuffer, OldBuffer, MIN (OldSize, NewSize));
+  }
+  if (OldBuffer != NULL) {
+    FreePool(OldBuffer);
   }
   return NewBuffer;
 }

@@ -3,7 +3,6 @@
 
   Copyright (c) Microsoft Corporation.<BR>
   SPDX-License-Identifier: BSD-2-Clause-Patent
-
 **/
 
 #include <PiDxe.h>
@@ -24,11 +23,11 @@ struct _UNIT_TEST_LOG_PREFIX_STRING {
   CHAR8             *String;
 };
 
-struct _UNIT_TEST_LOG_PREFIX_STRING   mLogPrefixStrings[] = {
-  { DEBUG_ERROR,    "[ERROR]       " },
-  { DEBUG_WARN,     "[WARNING]     " },
-  { DEBUG_INFO,     "[INFO]        " },
-  { DEBUG_VERBOSE,  "[VERBOSE]     " }
+struct _UNIT_TEST_LOG_PREFIX_STRING  mLogPrefixStrings[] = {
+  { UNIT_TEST_LOG_LEVEL_ERROR,   "[ERROR]       " },
+  { UNIT_TEST_LOG_LEVEL_WARN,    "[WARNING]     " },
+  { UNIT_TEST_LOG_LEVEL_INFO,    "[INFO]        " },
+  { UNIT_TEST_LOG_LEVEL_VERBOSE, "[VERBOSE]     " }
 };
 
 //
@@ -109,15 +108,11 @@ AddStringToUnitTestLog (
 VOID
 EFIAPI
 UnitTestLogInit (
-  IN OUT UNIT_TEST_HANDLE  TestHandle,
-  IN     UINT8             *Buffer,     OPTIONAL
-  IN     UINTN             BufferSize   OPTIONAL
+  IN OUT UNIT_TEST  *Test,
+  IN     UINT8      *Buffer,     OPTIONAL
+  IN     UINTN      BufferSize   OPTIONAL
   )
 {
-  UNIT_TEST  *Test;
-
-  Test = (UNIT_TEST *)TestHandle;
-
   //
   // Make sure that you're cooking with gas.
   //
@@ -146,28 +141,37 @@ UnitTestLogInit (
   }
 }
 
+/**
+  Test logging function that records a messages in the test framework log.
+  Record is associated with the currently executing test case.
+
+  @param[in]  ErrorLevel  The error level of the unit test log message.
+  @param[in]  Format      Formatting string following the format defined in the
+                          MdePkg/Include/Library/PrintLib.h.
+  @param[in]  ...         Print args.
+**/
 VOID
 EFIAPI
 UnitTestLog (
-  IN UNIT_TEST_FRAMEWORK_HANDLE  Framework,
-  IN UINTN                       ErrorLevel,
-  IN CONST CHAR8                 *Format,
+  IN  UINTN        ErrorLevel,
+  IN  CONST CHAR8  *Format,
   ...
   )
 {
-  CHAR8        NewFormatString[UNIT_TEST_MAX_SINGLE_LOG_STRING_LENGTH];
-  CHAR8        LogString[UNIT_TEST_MAX_SINGLE_LOG_STRING_LENGTH];
-  CONST CHAR8  *LogTypePrefix;
-  VA_LIST      Marker;
-  UINTN        LogLevel;
+  UNIT_TEST_FRAMEWORK_HANDLE  FrameworkHandle;
+  CHAR8                       NewFormatString[UNIT_TEST_MAX_SINGLE_LOG_STRING_LENGTH];
+  CHAR8                       LogString[UNIT_TEST_MAX_SINGLE_LOG_STRING_LENGTH];
+  CONST CHAR8                 *LogTypePrefix;
+  VA_LIST                     Marker;
+
+  FrameworkHandle = GetActiveFrameworkHandle ();
 
   LogTypePrefix = NULL;
-  LogLevel      = (UINTN)PcdGet32 (UnitTestLogLevel);
 
   //
-  // Make sure that this debug mode is enabled.
+  // Make sure that this unit test log level is enabled.
   //
-  if ((ErrorLevel & LogLevel) == 0) {
+  if ((ErrorLevel & (UINTN)PcdGet32 (PcdUnitTestLogLevel)) == 0) {
     return;
   }
 
@@ -192,5 +196,5 @@ UnitTestLog (
   //
   // Finally, add the string to the log.
   //
-  AddStringToUnitTestLog (((UNIT_TEST_FRAMEWORK *)Framework)->CurrentTest, LogString);
+  AddStringToUnitTestLog (((UNIT_TEST_FRAMEWORK *)FrameworkHandle)->CurrentTest, LogString);
 }
